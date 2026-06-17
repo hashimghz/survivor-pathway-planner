@@ -1,0 +1,12 @@
+services:
+  app:
+    build: .
+    container_name: spp-app
+    ports:
+      - "8501:8501"
+    volumes:
+      - ./db:/app/db
+    environment:
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      PROFILE_ENCRYPTION_KEY: ${PROFILE_ENCRYPTION_KEY:-}
+      ANON_ID_PEPPER: ${ANON_ID_PEPPER:-}
