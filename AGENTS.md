@@ -67,6 +67,7 @@ docker compose up                  # full stack (demo target)
 - Any change to the encryption scheme, HMAC pepper handling, or anonymization boundary.
 
 ### Never
+- Run any git command that modifies history or remote state: `git commit`, `git push`, `git merge`, `git rebase`, `git reset`, `git tag`, `git checkout -b`, `git stash`. **The human owns all commits and pushes.** Make file edits and stop; the human reviews and commits. Read-only git commands (`git status`, `git diff`, `git log`, `git show`) are fine.
 - Put real survivor data anywhere. Fixtures are synthetic only, grounded in published literature (Polaris National Survivor Study, IWPR).
 - Let the LLM make the ranking decision. L4 explains the ranking L3 produced; it does not reorder.
 - Set LLM temperature above 0 in production paths.
@@ -78,9 +79,11 @@ docker compose up                  # full stack (demo target)
 
 ## Workflow
 
-- Each agent works in an isolated git worktree on its own branch (`agent/bedrock`, `agent/engine`, `agent/surface`).
-- Sync to `main` every ~4 hours: merge, re-run the integration smoke test, update fixtures if needed.
-- CI gate: `ruff` + `mypy models/` + `pytest` (unit + integration) + `docker build` + a `models.py` hash check that fails on schema drift without the `contract-change` label.
+- Three agents work in isolated git worktrees on `agent/bedrock`, `agent/engine`, `agent/surface`.
+- **All git operations are performed by the human.** Agents make file edits and surface diffs for review. They do not commit, push, merge, rebase, or otherwise modify git state.
+- After each deliverable, an agent runs `ruff check` and `pytest -m unit`, then stops and waits for human review.
+- The human reviews diffs in the Cursor Agents Window, accepts/applies changes, and commits + merges to the integration branch every ~4 hours.
+- CI gate (runs on human-initiated pushes): `ruff` + `mypy models/` + `pytest` (unit + integration) + `docker build` + a `models.py` hash check that fails on schema drift without the `contract-change` label.
 - Cache LLM responses via `vcrpy` cassettes in `tests/cassettes/`. CI does not hit the live API.
 
 ## What this is not
