@@ -1,12 +1,15 @@
 services:
-  app:
+  pathway:
     build: .
-    container_name: spp-app
+    container_name: pathway-planner
     ports:
       - "8501:8501"
-    volumes:
-      - ./db:/app/db
+    env_file:
+      - .env
     environment:
-      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
-      PROFILE_ENCRYPTION_KEY: ${PROFILE_ENCRYPTION_KEY:-}
-      ANON_ID_PEPPER: ${ANON_ID_PEPPER:-}
+      PATHWAY_DB_PATH: /data/pathway.sqlite
+    volumes:
+      - pathway-data:/data
+
+volumes:
+  pathway-data:

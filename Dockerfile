@@ -1,19 +1,23 @@
 FROM python:3.12-slim
 
-WORKDIR /app
-
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    curl \
-    && rm -rf /var/lib/apt/lists/*
-
+# uv from the official distroless image
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 
-COPY pyproject.toml uv.lock README.md ./
-RUN uv sync --frozen --no-dev
+WORKDIR /app
 
+# Install deps in a cacheable layer
+COPY pyproject.toml ./
+COPY uv.lock* ./
+RUN uv sync --no-dev
+
+# App code (data/raw, models, engine, app, scripts, etc.)
 COPY . .
 
 EXPOSE 8501
 
-CMD ["uv", "run", "streamlit", "run", "app/Home.py", "--server.port=8501", "--server.address=0.0.0.0"]
+# Streamlit on all interfaces, no telemetry, no file watcher
+ENV STREAMLIT_SERVER_FILE_WATCHER_TYPE=none \
+    STREAMLIT_BROWSER_GATHER_USAGE_STATS=false
+
+CMD ["uv", "run", "streamlit", "run", "app/Home.py", \
+     "--server.address=0.0.0.0", "--server.port=8501", "--server.headless=true"]

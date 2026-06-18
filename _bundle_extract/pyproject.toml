@@ -24,18 +24,11 @@ dev = [
 ]
 
 [tool.ruff]
-line-length = 120
+line-length = 100
 target-version = "py312"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP", "N", "RET"]
-ignore = ["N999"]  # Streamlit pages use PascalCase by convention
-
-[tool.ruff.lint.per-file-ignores]
-"app/Home.py" = ["E402", "E501"]      # sys.path bootstrap precedes imports; HTML f-strings are long
-"app/pages/*.py" = ["E402", "E501"]   # same pattern in any page
-"app/components/*.py" = ["E501"]      # inline HTML legitimately exceeds line length
-
 
 [tool.pytest.ini_options]
 markers = [

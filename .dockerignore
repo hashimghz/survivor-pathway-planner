@@ -1,13 +1,28 @@
-.env
 .venv/
 __pycache__/
 *.pyc
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
 .git/
-.github/
-node_modules/
-.next/
-db/*.db
-db/*.sqlite
-tests/
-*.md
-!README.md
+.gitignore
+*.sqlite
+.env
+.env.local
+.vscode/
+.idea/
+.DS_Store
+
+# Cursor agent metadata (same as gitignore)
+.cursor/
+.cursorrules
+.cursorignore
+.specstory/
+.agent-state/
+agent-logs/
+*.cursor-plan
+
+# Workflow documentation not needed in the runtime image
+AGENTS.md
+**/AGENTS.md
+AGENT_KICKOFF_PROMPTS*.md

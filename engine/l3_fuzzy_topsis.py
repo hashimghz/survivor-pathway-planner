@@ -1,0 +1,233 @@
+"""Fuzzy MCDA scoring for occupation candidates.
+
+For each surviving occupation, computes a per-criterion fit score in [0, 1] by
+mapping the survivor's graded preferences (trigger / avoid / ok) onto the
+occupation's work-context ratings via triangular tolerance bands, then
+aggregates the nine criterion scores into one fit score using a TOPSIS
+distance-to-ideal formula with domain-tuned weights.
+
+Internal use only. Public entry: ``score(ticket, occupations) -> list[ScoredOccupation]``.
+The pipeline orchestrator calls this, and L4 wraps each ScoredOccupation into a
+public Candidate.
+
+Algorithm summary
+-----------------
+1. Per-criterion fit (9 dimensions, each in [0, 1]):
+   - Six "graded" criteria map survivor preference to a tolerance band; an
+     occupation attribute above the band penalises fit linearly. The penalty
+     slope is steeper for ``trigger`` than for ``avoid``.
+   - skill_match: level-weighted overlap of survivor skills with occupation
+     skills.
+   - wage_fit: the fraction of an occupation's BLS wage range expected to
+     clear the survivor's hourly floor, approximating wage_pct10-to-pct90 as
+     a uniform distribution.
+   - commute_fit: stub — the data layer does not currently carry occupation
+     location, so this returns 1.0 across the board. Wire up once posting
+     locations land.
+
+2. TOPSIS aggregation:
+   For benefit criteria with each score already in [0, 1]:
+     d_pos = sqrt( sum w_i * (1 - s_i)^2 )   # distance to positive ideal
+     d_neg = sqrt( sum w_i *      s_i^2  )   # distance to negative ideal
+     fit   = d_neg / (d_pos + d_neg)
+
+3. Sort by fit descending. L4 consumes the top-N.
+"""
+
+from __future__ import annotations
+
+import math
+from dataclasses import dataclass
+
+from models import CriteriaBreakdown, GradedLevel, Occupation, Ticket
+
+# ---------------------------------------------------------------------------
+# Weights — sum to 1.0. Skewed toward skill_match, wage_fit, and isolation
+# because those carry the strongest survivor-safety and economic signal.
+# Move to engine/config/topsis_weights.yaml once tuning matters.
+# ---------------------------------------------------------------------------
+
+WEIGHTS: dict[str, float] = {
+    "skill_match":         0.20,
+    "wage_fit":            0.18,
+    "isolation_fit":       0.14,
+    "customer_facing_fit": 0.10,
+    "shift_fit":           0.10,
+    "schedule_fit":        0.08,
+    "uniformed_role_fit":  0.07,
+    "male_dominated_fit":  0.07,
+    "commute_fit":         0.06,
+}
+assert abs(sum(WEIGHTS.values()) - 1.0) < 1e-9, "TOPSIS weights must sum to 1.0"
+
+
+# ---------------------------------------------------------------------------
+# Tolerance bands: the upper bound of acceptable exposure to a negative
+# attribute, by graded preference level. The "fuzzy" lives here — these
+# are the tops of triangular fuzzy numbers; exposure above the bound bleeds
+# into the descending slope and reduces fit.
+# ---------------------------------------------------------------------------
+
+TOLERANCE: dict[GradedLevel, float] = {
+    GradedLevel.TRIGGER: 0.10,
+    GradedLevel.AVOID:   0.40,
+    GradedLevel.OK:      1.00,
+}
+
+
+@dataclass
+class ScoredOccupation:
+    """Internal output of L3. Consumed by L4 which wraps in public Candidate."""
+
+    occupation: Occupation
+    fit_score: float
+    criteria_breakdown: CriteriaBreakdown
+
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+def _exposure_fit(pref: GradedLevel, exposure: float) -> float:
+    """Score in [0, 1] from the survivor's preference and the occupation's exposure.
+
+    Within tolerance, full fit (1.0). Above tolerance, linear decay to 0.0 by
+    the time exposure hits 1.0. Tighter tolerance (trigger) ⇒ steeper decay.
+    """
+    tolerance = TOLERANCE[pref]
+    if exposure <= tolerance:
+        return 1.0
+    span = max(1e-6, 1.0 - tolerance)
+    return max(0.0, 1.0 - (exposure - tolerance) / span)
+
+
+def _normalize_rating(value: float | None, lo: float = 1.0, hi: float = 5.0) -> float:
+    """Normalise an O*NET 1-5 rating to [0, 1]. Missing → 0.5 (neutral)."""
+    if value is None:
+        return 0.5
+    return max(0.0, min(1.0, (value - lo) / (hi - lo)))
+
+
+# ---------------------------------------------------------------------------
+# Per-criterion fit functions. Each returns a float in [0, 1].
+# ---------------------------------------------------------------------------
+
+def _skill_match(ticket: Ticket, occupation: Occupation) -> float:
+    """Level-weighted overlap. Survivor skill at level L matched to occupation skill counts L/5."""
+    if not occupation.skills:
+        return 0.5
+    survivor_levels = {s.skill_id: s.level_1_to_5 for s in ticket.skills}
+    occ_skill_ids = [s.id for s in occupation.skills]
+    matched_levels = sum(survivor_levels.get(sid, 0) for sid in occ_skill_ids)
+    max_possible = 5.0 * len(occ_skill_ids)
+    return min(1.0, matched_levels / max_possible)
+
+
+def _wage_fit(ticket: Ticket, occupation: Occupation) -> float:
+    """Fraction of an occupation's wage range expected to clear the survivor's floor."""
+    floor = float(ticket.wage_minimum_hourly)
+    p10 = float(occupation.wage_pct10_annual) / 2080 if occupation.wage_pct10_annual else None
+    p50 = float(occupation.median_wage_hourly) if occupation.median_wage_hourly else None
+    p90 = float(occupation.wage_pct90_annual) / 2080 if occupation.wage_pct90_annual else None
+
+    if p50 is None:
+        return 0.5
+    if p10 is not None and floor <= p10:
+        return 1.0
+    if p90 is not None and floor > p90:
+        return 0.0
+    if p10 is None or p90 is None:
+        return 0.7 if floor <= p50 else 0.3
+    return max(0.0, min(1.0, (p90 - floor) / (p90 - p10)))
+
+
+def _isolation_fit(ticket: Ticket, occupation: Occupation) -> float:
+    pref = ticket.graded_constraints.isolated_workplace
+    exposure = 1.0 if occupation.isolated_workplace else 0.0
+    return _exposure_fit(pref, exposure)
+
+
+def _customer_facing_fit(ticket: Ticket, occupation: Occupation) -> float:
+    pref = ticket.graded_constraints.customer_facing
+    exposure = _normalize_rating(occupation.public_facing)
+    return _exposure_fit(pref, exposure)
+
+
+def _night_shift_proxy(ticket: Ticket, occupation: Occupation) -> float:
+    """night_shift preference against schedule_irregularity (weak but defensible proxy)."""
+    pref = ticket.graded_constraints.night_shift
+    exposure = _normalize_rating(occupation.schedule_irregularity)
+    return _exposure_fit(pref, exposure)
+
+
+def _shift_fit(ticket: Ticket, occupation: Occupation) -> float:
+    """How well the survivor's available shifts cover an irregular schedule."""
+    shifts = ticket.available_shifts
+    available = sum([shifts.morning, shifts.afternoon, shifts.evening])
+    if available == 0:
+        return 0.0
+    irreg = _normalize_rating(occupation.schedule_irregularity)
+    needed = max(1, math.ceil(3 * irreg))
+    return min(1.0, available / needed)
+
+
+def _commute_fit(ticket: Ticket, occupation: Occupation) -> float:
+    """Stub: no posting-location data yet. Default to 1.0 across the board."""
+    return 1.0
+
+
+def _uniformed_role_fit(ticket: Ticket, occupation: Occupation) -> float:
+    """No O*NET column for uniform requirements. Penalise slightly on trigger."""
+    pref = ticket.graded_constraints.uniformed_role
+    return 0.7 if pref == GradedLevel.TRIGGER else 1.0
+
+
+def _male_dominated_fit(ticket: Ticket, occupation: Occupation) -> float:
+    """No O*NET column for team composition. Penalise slightly on trigger."""
+    pref = ticket.graded_constraints.male_dominated_team
+    return 0.7 if pref == GradedLevel.TRIGGER else 1.0
+
+
+def _build_breakdown(ticket: Ticket, occupation: Occupation) -> CriteriaBreakdown:
+    return CriteriaBreakdown(
+        skill_match         = _skill_match(ticket, occupation),
+        wage_fit            = _wage_fit(ticket, occupation),
+        commute_fit         = _commute_fit(ticket, occupation),
+        shift_fit           = _shift_fit(ticket, occupation),
+        isolation_fit       = _isolation_fit(ticket, occupation),
+        customer_facing_fit = _customer_facing_fit(ticket, occupation),
+        uniformed_role_fit  = _uniformed_role_fit(ticket, occupation),
+        male_dominated_fit  = _male_dominated_fit(ticket, occupation),
+        schedule_fit        = _night_shift_proxy(ticket, occupation),
+    )
+
+
+# ---------------------------------------------------------------------------
+# TOPSIS aggregation
+# ---------------------------------------------------------------------------
+
+def _aggregate(breakdown: CriteriaBreakdown) -> float:
+    """Weighted TOPSIS-style score in [0, 1]."""
+    scores = {k: getattr(breakdown, k) for k in WEIGHTS}
+    d_pos = math.sqrt(sum(WEIGHTS[k] * (1.0 - s) ** 2 for k, s in scores.items()))
+    d_neg = math.sqrt(sum(WEIGHTS[k] * s ** 2 for k, s in scores.items()))
+    if d_pos + d_neg == 0:
+        return 0.0
+    return d_neg / (d_pos + d_neg)
+
+
+# ---------------------------------------------------------------------------
+# Public entry point
+# ---------------------------------------------------------------------------
+
+def score(ticket: Ticket, occupations: list[Occupation]) -> list[ScoredOccupation]:
+    """Score and rank occupations. Output sorted by fit_score descending."""
+    scored: list[ScoredOccupation] = []
+    for occ in occupations:
+        breakdown = _build_breakdown(ticket, occ)
+        fit = _aggregate(breakdown)
+        scored.append(
+            ScoredOccupation(occupation=occ, fit_score=fit, criteria_breakdown=breakdown)
+        )
+    scored.sort(key=lambda s: s.fit_score, reverse=True)
+    return scored
