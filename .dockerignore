@@ -13,16 +13,14 @@ __pycache__/
 .idea/
 .DS_Store
 
-# Cursor agent metadata (same as gitignore)
-.cursor/
-.cursorrules
-.cursorignore
-.specstory/
-.agent-state/
-agent-logs/
-*.cursor-plan
+# Stale duplicates from the original bundle
+app_Home.py
+app_style.css
+candidate_card.py
 
-# Workflow documentation not needed in the runtime image
-AGENTS.md
-**/AGENTS.md
-AGENT_KICKOFF_PROMPTS*.md
+# Project artifacts not for submission
+*.zip
+*.png
+profile_schema.txt
+proposal.md
+five_layer_pipeline_data_flow.png

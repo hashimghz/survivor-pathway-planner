@@ -1,61 +1,18 @@
 .venv/
 __pycache__/
 *.pyc
-*.pyo
 .pytest_cache/
 .ruff_cache/
 .mypy_cache/
-
-# Streamlit
-.streamlit/secrets.toml
-
-# Local data and secrets
 *.sqlite
 *.db
 .env
 .env.local
-
-# Editor
 .vscode/
 .idea/
 *.swp
-
-# OS
 .DS_Store
 Thumbs.db
-
-# Build outputs
 dist/
 build/
 *.egg-info/
-
-# Test artifacts
-tests/cassettes/*.yaml.bak
-
-# Cursor agent metadata
-.cursor/
-.cursorrules
-.cursorignore
-.specstory/
-
-# Agent planning artifacts (if your setup dumps them locally)
-.agent-state/
-agent-logs/
-*.cursor-plan
-
-# Workflow docs — keep private
-AGENTS.md
-**/AGENTS.md
-AGENT_KICKOFF_PROMPTS*.md
-
-scripts/hooks/
-
-# Tests — not part of submission
-tests/
-tests/cassettes/
-
-# Dev-only scripts
-scripts/hooks/
-scripts/install_hooks.sh
-.env.example
-proposal.pdf
