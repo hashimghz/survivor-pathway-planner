@@ -54,7 +54,8 @@ Run twice. Put the outputs in `.env`:
 ```
 PATHWAY_AES_KEY=<first output>
 PATHWAY_HMAC_PEPPER=<second output>
-ANTHROPIC_API_KEY=<your Anthropic key>```
+ANTHROPIC_API_KEY=<your Anthropic key>
+```
 
 ### Launch
 
