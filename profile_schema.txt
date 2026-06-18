@@ -1,0 +1,43 @@
+Identity (encrypted) — IN
+
+legal_name, preferred_name, pronouns
+dob
+safe_phone, safe_contact_method (phone | caseworker_only)
+caseworker_notes (single freetext field)
+
+languages: list of {code, fluency_1_to_5} — keep this richer than yes/no, it's a real matching signal
+current_metro (city/region, not street)
+work_authorization: yes | in_process | no
+has_vehicle, has_valid_license, transit_access — three bools
+education_highest: standard enum
+disabilities: 
+dependents: (1-5)
+skills: {skill_id, level_1_to_5, citability (direct|transferable|unsafe), safe_framing, source}
+exclusion_zones: list of {lat, lng, radius_mi} — one or two zones is fine for the demo
+exclusion_industries: from a 6–8 entry controlled vocabulary (hospitality, transportation, agriculture, domestic_work, salon_nail, massage_parlor, restaurant_back_of_house, retail_overnight)
+exclusion_employers: list of employer IDs (can be empty for the demo)
+documentation_blockers: 4 fields — requires_clean_record, requires_drivers_license, requires_ssn, requires_credit_check
+Graded constraints — IN, reduced to 5
+Each is one of trigger | avoid | ok:
+
+night_shift
+isolated_workplace
+customer_facing
+male_dominated_team
+uniformed_role
+requires_overnight_travel
+max_commute_minutes (int)
+available_shifts: {morning, afternoon, evening}
+
+Legal profile — IN, simplified
+
+record_categories: controlled vocabulary (prostitution_related, drug_possession, theft_property, other)
+expungement_eligible: subset of above
+jurisdiction: state code
+
+state_id, drivers_license, ssn, work_authorization_doc, passport,
+professional_licenses
+industries_of_interest: list from the same vocabulary as exclusions
+wage_minimum_hourly: decimal
+training_appetite
+long_term_goal: freetext

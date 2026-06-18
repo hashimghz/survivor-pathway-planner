@@ -1,0 +1,76 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: uv sync
+
+      - name: Ruff check
+        run: uv run ruff check .
+
+      - name: Ruff format
+        run: uv run ruff format --check .
+
+      - name: Mypy models/
+        run: uv run mypy models/
+
+      - name: Pytest
+        run: uv run pytest
+
+  schema-hash:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check schema hash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          COMPUTED=$(sha256sum models/__init__.py | awk '{print $1}')
+          EXPECTED=$(tr -d '[:space:]' < models/.schema-hash)
+          if [ "$COMPUTED" = "$EXPECTED" ]; then
+            echo "Schema hash OK"
+            exit 0
+          fi
+          echo "Schema drift detected (expected $EXPECTED, got $COMPUTED)"
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            LABELS=$(gh pr view "${{ github.event.pull_request.number }}" \
+              --repo "${{ github.repository }}" \
+              --json labels --jq '.labels[].name' || true)
+            if echo "$LABELS" | grep -qx 'contract-change'; then
+              echo "contract-change label present — allowing schema drift"
+              exit 0
+            fi
+          fi
+          echo "Add the contract-change PR label or update models/.schema-hash"
+          exit 1
+
+  docker-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: docker build -t survivor-pathway-planner:ci .
