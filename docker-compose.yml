@@ -10,6 +10,11 @@ services:
       PATHWAY_DB_PATH: /data/pathway.sqlite
     volumes:
       - pathway-data:/data
+      - D:/survivor-pathway-planner/app:/app/app
+      - D:/survivor-pathway-planner/engine:/engine
+      - D:/survivor-pathway-planner/config:/config
+      - D:/survivor-pathway-planner/db:/db
+      - D:/survivor-pathway-planner/tests:/tests
 
 volumes:
   pathway-data:

@@ -19,3 +19,4 @@ build/
 data/processed/*.npz
 CHAT_SUMMARY.md
 project_handoff.md
+next_phase_plan.md
