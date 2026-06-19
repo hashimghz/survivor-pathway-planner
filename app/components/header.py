@@ -9,12 +9,19 @@ import streamlit as st
 from app import copy
 
 
-def render(active_name: str | None) -> None:
+def render(active_name: str | None, is_sample: bool = False) -> None:
     if active_name:
+        sample_html = (
+            f'<span class="pp-badge avoid" style="margin-left: 8px;">'
+            f'{escape(copy.SAMPLE_TAG_LABEL)}</span>'
+            if is_sample
+            else ""
+        )
         badge_html = (
             f'<div class="pp-active-profile">'
             f'  <span class="label">{copy.ACTIVE_PROFILE_LABEL}</span>'
             f'  <span class="name">{escape(active_name)}</span>'
+            f'  {sample_html}'
             f'</div>'
         )
     else:

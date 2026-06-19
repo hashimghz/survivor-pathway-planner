@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from engine.vacatur import applicable_pathways
 from models import (
     Excluded,
     ExclusionRule,
@@ -34,9 +35,32 @@ def _count_industry(excluded: list[Excluded], industry: Industry) -> int:
 
 
 def _clean_record_hint(ticket: Ticket) -> str:
-    if ticket.legal_profile.expungement_eligible:
-        return "Vacatur filing for prostitution-related charges"
-    return "Record sealing may apply"
+    """Hint for the requires_clean_record intervention.
+
+    `LegalProfile` has no `trafficking_related` boolean (the models contract
+    is frozen — see models/AGENTS.md). Convention used here instead: a
+    record category counts as trafficking-related when it appears in
+    `expungement_eligible`, since that field is documented as "subset of
+    record_categories eligible for vacatur." Surface this convention if a
+    contract change ever adds a real field.
+    """
+    legal = ticket.legal_profile
+    record_categories = [c.value for c in legal.record_categories]
+    expungement_eligible = [c.value for c in legal.expungement_eligible]
+    trafficking_related = bool(expungement_eligible)
+
+    pathways = applicable_pathways(
+        record_categories=record_categories,
+        expungement_eligible=expungement_eligible,
+        jurisdiction=legal.jurisdiction,
+        trafficking_related=trafficking_related,
+    )
+    if pathways:
+        pathway = pathways[0]
+        return f"Vacatur pathway available: {pathway['statute']} — {pathway['next_step']}"
+    if expungement_eligible:
+        return "Record sealing or expungement may apply — verify with local legal aid."
+    return "Discuss documentation requirements with the survivor."
 
 
 def compute(

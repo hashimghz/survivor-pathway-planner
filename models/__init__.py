@@ -247,7 +247,10 @@ class Profile(BaseModel):
     disabilities: list[str] = Field(default_factory=list)
     dependents: conint(ge=0, le=10)
 
-    skills: list[Skill]
+    skills: list[Skill] = Field(default_factory=list)
+
+    # Free-text skill strings entered by the caseworker.
+    existing_skills: list[str] = Field(default_factory=list)
 
     exclusion_zones: list[ExclusionZone] = Field(default_factory=list)
     exclusion_industries: list[Industry] = Field(default_factory=list)
@@ -266,6 +269,15 @@ class Profile(BaseModel):
     wage_minimum_hourly: HourlyWage
     training_appetite: TrainingAppetite
     long_term_goal: str = ""
+
+    # Caseworker curation of engine output. Never read by the engine and
+    # never carried onto Ticket (see core/anonymizer.py's exclude set) —
+    # this is purely "which results did the caseworker flag," not survivor
+    # intake data, so it has no business crossing into the pipeline.
+    saved_candidate_codes: list[str] = Field(
+        default_factory=list,
+        description="O*NET-SOC codes of candidates the caseworker saved for follow-up.",
+    )
 
 
 # =============================================================================
@@ -292,6 +304,11 @@ class Ticket(BaseModel):
     dependents: conint(ge=0, le=10)
 
     skills: list[Skill]
+
+    # Free-text skill strings entered by the caseworker (Phase 4 form).
+    existing_skills: list[str] = Field(default_factory=list)
+    # L1 mapper output: each entry has "input", "matches" with onet_id/onet_name/confidence.
+    mapped_skills: list[dict] = Field(default_factory=list)
 
     exclusion_zones: list[ExclusionZone]
     exclusion_industries: list[Industry]
@@ -487,3 +504,4 @@ class PipelineResult(BaseModel):
     excluded: list[Excluded]
     interventions: InterventionReport
     skills_to_review: list[SkillToReview] = Field(default_factory=list)
+

@@ -113,11 +113,51 @@ def _normalize_rating(value: float | None, lo: float = 1.0, hi: float = 5.0) -> 
 # ---------------------------------------------------------------------------
 
 def _skill_match(ticket: Ticket, occupation: Occupation) -> float:
-    """Level-weighted overlap. Survivor skill at level L matched to occupation skill counts L/5."""
+    """Skill overlap between the survivor's skills and the occupation's required skills.
+
+    When L1 mapped_skills are available (from free-text input), computes a
+    confidence-weighted Jaccard overlap between the survivor's mapped O*NET
+    skill IDs and the occupation's skill IDs.
+
+    Falls back to the original level-weighted overlap when mapped_skills is
+    empty (legacy path using structured Skill objects).
+    """
     if not occupation.skills:
         return 0.5
+
+    occ_skill_ids = {s.id for s in occupation.skills}
+
+    # L1 mapped skills path: confidence-weighted overlap
+    if ticket.mapped_skills:
+        # Build {onet_id: best_confidence} from L1 output, taking the top
+        # match per input skill to avoid double-counting.
+        survivor_weights: dict[str, float] = {}
+        for entry in ticket.mapped_skills:
+            for match in entry.get("matches", []):
+                sid = match["onet_id"]
+                conf = match["confidence"]
+                if sid not in survivor_weights or conf > survivor_weights[sid]:
+                    survivor_weights[sid] = conf
+
+        if not survivor_weights:
+            return 0.3  # L1 ran but found no matches — weak signal
+
+        survivor_ids = set(survivor_weights.keys())
+        intersection = survivor_ids & occ_skill_ids
+        union = survivor_ids | occ_skill_ids
+
+        if not union:
+            return 0.5
+
+        # Weighted Jaccard: sum of confidences for intersecting skills
+        # divided by total confidence across the union.
+        weighted_inter = sum(survivor_weights.get(sid, 0.5) for sid in intersection)
+        weighted_union = sum(survivor_weights.get(sid, 0.5) for sid in union)
+
+        return min(1.0, weighted_inter / weighted_union) if weighted_union > 0 else 0.5
+
+    # Legacy path: structured Skill objects with level_1_to_5
     survivor_levels = {s.skill_id: s.level_1_to_5 for s in ticket.skills}
-    occ_skill_ids = [s.id for s in occupation.skills]
     matched_levels = sum(survivor_levels.get(sid, 0) for sid in occ_skill_ids)
     max_possible = 5.0 * len(occ_skill_ids)
     return min(1.0, matched_levels / max_possible)

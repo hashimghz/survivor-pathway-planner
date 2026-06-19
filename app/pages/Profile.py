@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import base64
 import os
+import re
 import sys
 from datetime import date
 from decimal import Decimal
@@ -22,7 +23,6 @@ from app import copy  # noqa: E402
 from app.components import header  # noqa: E402
 from core.anonymizer import profile_to_ticket  # noqa: E402
 from db.repository import ProfileRepository  # noqa: E402
-from fixtures.synthetic_profiles import synthetic_profiles  # noqa: E402
 from models import (  # noqa: E402
     AvailableShifts,
     DocumentationBlockers,
@@ -37,7 +37,6 @@ from models import (  # noqa: E402
     Profile,
     RecordCategory,
     SafeContactMethod,
-    Skill,
     TrainingAppetite,
     WorkAuthorization,
 )
@@ -136,43 +135,6 @@ def _enum_multiselect(
     )
 
 
-def _load_synthetic_profiles() -> list[Profile]:
-    try:
-        profiles = synthetic_profiles()
-    except (OSError, ValidationError):
-        return []
-    return profiles
-
-
-def _skills_sources(
-    repo: ProfileRepository,
-) -> tuple[list[Profile], list[dict]]:
-    synthetic = _load_synthetic_profiles()
-    saved = repo.list_summaries()
-    return synthetic, saved
-
-
-def _resolve_skills(
-    *,
-    source_kind: str,
-    synthetic: list[Profile],
-    saved: list[dict],
-    synthetic_pick: str,
-    saved_pick: str,
-    repo: ProfileRepository,
-) -> list[Skill] | None:
-    if source_kind == copy.PROFILE_SKILLS_SOURCE_SYNTHETIC:
-        for profile in synthetic:
-            label = profile.identity.preferred_name
-            if label == synthetic_pick:
-                return profile.skills
-        return None
-    for summary in saved:
-        if summary["preferred_name"] == saved_pick:
-            return repo.get(summary["id"]).skills
-    return None
-
-
 def _parse_disabilities(raw: str) -> list[str]:
     if not raw.strip():
         return []
@@ -204,16 +166,11 @@ def main() -> None:
         st.stop()
 
     repo = _repo()
-    synthetic, saved = _skills_sources(repo)
-    skills_blocked = not synthetic and not saved
-
-    if skills_blocked:
-        _info_card(copy.PROFILE_SKILLS_SOURCE_UNAVAILABLE)
 
     if "lang_row_count" not in st.session_state:
         st.session_state["lang_row_count"] = 1
 
-    if st.button(copy.PROFILE_ADD_LANGUAGE, disabled=skills_blocked):
+    if st.button(copy.PROFILE_ADD_LANGUAGE):
         st.session_state["lang_row_count"] += 1
 
     with st.form("new_profile", clear_on_submit=False):
@@ -400,39 +357,14 @@ def main() -> None:
         jurisdiction = st.text_input(copy.PROFILE_FIELD_LABELS["jurisdiction"])
         _section_end()
 
-        # 7. Skills
+        # 7. Skills — free-text entry
         _section(copy.PROFILE_SECTION_SKILLS)
-        source_options: list[str] = []
-        if synthetic:
-            source_options.append(copy.PROFILE_SKILLS_SOURCE_SYNTHETIC)
-        if saved:
-            source_options.append(copy.PROFILE_SKILLS_SOURCE_SAVED)
 
-        skills: list[Skill] = []
-        if source_options:
-            source_kind = st.radio(
-                copy.PROFILE_SKILLS_SOURCE_LABEL,
-                source_options,
-                horizontal=True,
-            )
-            if source_kind == copy.PROFILE_SKILLS_SOURCE_SYNTHETIC:
-                synthetic_labels = [p.identity.preferred_name for p in synthetic]
-                synthetic_pick = st.selectbox(
-                    copy.PROFILE_SKILLS_PICK_SYNTHETIC,
-                    synthetic_labels,
-                )
-                saved_pick = ""
-            else:
-                saved_labels = [s["preferred_name"] for s in saved]
-                saved_pick = st.selectbox(
-                    copy.PROFILE_SKILLS_PICK_SAVED,
-                    saved_labels,
-                )
-                synthetic_pick = ""
-        else:
-            source_kind = ""
-            synthetic_pick = ""
-            saved_pick = ""
+        skills_text = st.text_area(
+            copy.PROFILE_SKILLS_TEXT_LABEL,
+            height=120,
+            key="skills_text",
+        )
 
         _section_end()
 
@@ -457,88 +389,83 @@ def main() -> None:
         submitted = st.form_submit_button(
             copy.PROFILE_SUBMIT,
             type="primary",
-            disabled=skills_blocked,
         )
 
-    if submitted and not skills_blocked:
-        resolved = _resolve_skills(
-            source_kind=source_kind,
-            synthetic=synthetic,
-            saved=saved,
-            synthetic_pick=synthetic_pick,
-            saved_pick=saved_pick,
-            repo=repo,
-        )
-        if resolved is None:
-            _info_card(copy.PROFILE_SKILLS_SOURCE_UNAVAILABLE)
+    if submitted:
+        # Parse free-text skills into a list of strings
+        existing_skills = [
+            s.strip()
+            for s in re.split(r"[\n,]", skills_text)
+            if s.strip()
+        ]
+        try:
+            profile = Profile(
+                identity=Identity(
+                    legal_name=legal_name,
+                    preferred_name=preferred_name,
+                    pronouns=pronouns,
+                    dob=dob,
+                    safe_phone=safe_phone,
+                    safe_contact_method=safe_contact_method,
+                    caseworker_notes=caseworker_notes,
+                ),
+                languages=languages,
+                current_metro=current_metro,
+                work_authorization=work_authorization,
+                has_vehicle=has_vehicle,
+                has_valid_license=has_valid_license,
+                transit_access=transit_access,
+                education_highest=education_highest,
+                disabilities=_parse_disabilities(disabilities_raw),
+                dependents=dependents,
+                skills=[],
+                existing_skills=existing_skills,
+                exclusion_zones=[],
+                exclusion_industries=[],
+                exclusion_employers=[],
+                documentation_blockers=DocumentationBlockers(
+                    requires_clean_record=requires_clean_record,
+                    requires_drivers_license=requires_drivers_license,
+                    requires_ssn=requires_ssn,
+                    requires_credit_check=requires_credit_check,
+                ),
+                graded_constraints=GradedConstraints(**graded_values),
+                max_commute_minutes=max_commute_minutes,
+                available_shifts=AvailableShifts(
+                    morning=shift_morning,
+                    afternoon=shift_afternoon,
+                    evening=shift_evening,
+                ),
+                legal_profile=LegalProfile(
+                    record_categories=record_categories,
+                    expungement_eligible=expungement_eligible,
+                    jurisdiction=jurisdiction,
+                ),
+                documents_held=DocumentsHeld(
+                    state_id=state_id,
+                    drivers_license=drivers_license,
+                    ssn=ssn,
+                    work_authorization_doc=work_authorization_doc,
+                    passport=passport,
+                ),
+                industries_of_interest=industries_of_interest,
+                wage_minimum_hourly=Decimal(str(wage_minimum_hourly)),
+                training_appetite=training_appetite,
+                long_term_goal=long_term_goal,
+            )
+        except ValidationError:
+            _info_card(copy.PROFILE_VALIDATION_ERROR)
         else:
-            skills = resolved
-            try:
-                profile = Profile(
-                    identity=Identity(
-                        legal_name=legal_name,
-                        preferred_name=preferred_name,
-                        pronouns=pronouns,
-                        dob=dob,
-                        safe_phone=safe_phone,
-                        safe_contact_method=safe_contact_method,
-                        caseworker_notes=caseworker_notes,
-                    ),
-                    languages=languages,
-                    current_metro=current_metro,
-                    work_authorization=work_authorization,
-                    has_vehicle=has_vehicle,
-                    has_valid_license=has_valid_license,
-                    transit_access=transit_access,
-                    education_highest=education_highest,
-                    disabilities=_parse_disabilities(disabilities_raw),
-                    dependents=dependents,
-                    skills=skills,
-                    exclusion_zones=[],
-                    exclusion_industries=[],
-                    exclusion_employers=[],
-                    documentation_blockers=DocumentationBlockers(
-                        requires_clean_record=requires_clean_record,
-                        requires_drivers_license=requires_drivers_license,
-                        requires_ssn=requires_ssn,
-                        requires_credit_check=requires_credit_check,
-                    ),
-                    graded_constraints=GradedConstraints(**graded_values),
-                    max_commute_minutes=max_commute_minutes,
-                    available_shifts=AvailableShifts(
-                        morning=shift_morning,
-                        afternoon=shift_afternoon,
-                        evening=shift_evening,
-                    ),
-                    legal_profile=LegalProfile(
-                        record_categories=record_categories,
-                        expungement_eligible=expungement_eligible,
-                        jurisdiction=jurisdiction,
-                    ),
-                    documents_held=DocumentsHeld(
-                        state_id=state_id,
-                        drivers_license=drivers_license,
-                        ssn=ssn,
-                        work_authorization_doc=work_authorization_doc,
-                        passport=passport,
-                    ),
-                    industries_of_interest=industries_of_interest,
-                    wage_minimum_hourly=Decimal(str(wage_minimum_hourly)),
-                    training_appetite=training_appetite,
-                    long_term_goal=long_term_goal,
-                )
-            except ValidationError:
-                _info_card(copy.PROFILE_VALIDATION_ERROR)
-            else:
-                profile_id = repo.save(profile)
-                pepper = _hmac_pepper()
-                assert pepper is not None
-                ticket = profile_to_ticket(profile, pepper)
-                st.session_state["active_profile_id"] = profile_id
-                st.session_state["active_ticket"] = ticket
-                st.session_state["active_name"] = profile.identity.preferred_name
-                st.session_state.pop("pipeline_result", None)
-                st.switch_page("Home.py")
+            profile_id = repo.save(profile)
+            pepper = _hmac_pepper()
+            assert pepper is not None
+            ticket = profile_to_ticket(profile, pepper)
+            st.session_state["active_profile_id"] = profile_id
+            st.session_state["active_ticket"] = ticket
+            st.session_state["active_name"] = profile.identity.preferred_name
+            st.session_state["is_sample_profile"] = False
+            st.session_state.pop("pipeline_result", None)
+            st.switch_page("Home.py")
 
     _render_footer()
 

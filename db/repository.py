@@ -10,7 +10,7 @@ from core.crypto import decrypt_pii, encrypt_pii
 from models import Identity, Profile
 
 _CREATE_TABLE_SQL = """
-CREATE TABLE profiles (
+CREATE TABLE IF NOT EXISTS profiles (
     id TEXT PRIMARY KEY,
     encrypted_identity BLOB NOT NULL,
     non_pii_json TEXT NOT NULL,
@@ -77,6 +77,31 @@ class ProfileRepository:
         )
         non_pii = json.loads(row["non_pii_json"])
         return Profile(identity=identity, **non_pii)
+
+    def update_saved_candidates(self, profile_id: str, saved_candidate_codes: list[str]) -> None:
+        """Persist the caseworker's saved-candidate list for a profile.
+
+        Only touches `non_pii_json` — never decrypts or rewrites
+        `encrypted_identity`. Raises KeyError if profile_id doesn't exist.
+        """
+        with sqlite3.connect(self._db_path) as conn:
+            conn.row_factory = sqlite3.Row
+            row = conn.execute(
+                "SELECT non_pii_json FROM profiles WHERE id = ?",
+                (profile_id,),
+            ).fetchone()
+
+            if row is None:
+                raise KeyError(profile_id)
+
+            non_pii = json.loads(row["non_pii_json"])
+            non_pii["saved_candidate_codes"] = list(saved_candidate_codes)
+
+            conn.execute(
+                "UPDATE profiles SET non_pii_json = ? WHERE id = ?",
+                (json.dumps(non_pii), profile_id),
+            )
+            conn.commit()
 
     def list_summaries(self) -> list[dict]:
         with sqlite3.connect(self._db_path) as conn:

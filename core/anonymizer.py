@@ -10,4 +10,7 @@ from models import Profile, Ticket
 
 def profile_to_ticket(profile: Profile, pepper: bytes) -> Ticket:
     ticket_id = derive_ticket_id(str(uuid.uuid4()), pepper)
-    return Ticket(ticket_id=ticket_id, **profile.model_dump(exclude={"identity"}))
+    # saved_candidate_codes is caseworker curation of engine *output* — it
+    # has no place on the engine's *input* payload.
+    excluded = {"identity", "saved_candidate_codes"}
+    return Ticket(ticket_id=ticket_id, **profile.model_dump(exclude=excluded))

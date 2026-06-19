@@ -2,11 +2,15 @@
 
 Layout: top header + two-column body (sidebar context + main tabbed panel).
 The three tabs (Candidates / Excluded / Interventions) live inside this
-single page; no separate `pages/` directory, no page reloads.
+single page; no separate page reload between tabs.
 
-This file ships with a mock PipelineResult so the UI runs end-to-end before
-the engine is wired. Surface replaces `_load_mock_result()` with a real
-`engine.pipeline.run(ticket)` call once Engine is ready.
+This is the engine's real entry point: `engine.pipeline.run(ticket)` is
+called directly below, no mock data. The primary way a ticket gets here is a
+caseworker submitting a real survivor through `app/pages/Profile.py`. When no
+profile is active, the empty state leads with that as the main action, plus
+an explicitly-labeled sample-profile shortcut (see
+`app/components/empty_state.py` and `fixtures/demo_profiles.py`) for viewing
+the engine at a glance without a real intake.
 """
 
 from __future__ import annotations
@@ -18,12 +22,11 @@ _REPO_ROOT = Path(__file__).resolve().parent.parent
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
-from decimal import Decimal
-
+import plotly.io as pio
 import streamlit as st
 
 from app import copy
-
+from app.charts import income_trajectory
 from app.components import (
     candidate_card,
     empty_state,
@@ -31,25 +34,14 @@ from app.components import (
     header,
     interventions_list,
     sidebar,
+    skills_interpreted,
 )
-from models import (
-    AvailableShifts,
-    DocumentationBlockers,
-    DocumentsHeld,
-    EducationLevel,
-    GradedConstraints,
-    GradedLevel,
-    Language,
-    LegalProfile,
-    PipelineResult,
-    Skill,
-    SkillCitability,
-    SkillSource,
-    Ticket,
-    TrainingAppetite,
-    WorkAuthorization,
-)
+from app.plotly_theme import PATHWAY_TEMPLATE
 from engine.pipeline import run as run_pipeline
+from models import PipelineResult, Ticket
+
+pio.templates["pathway"] = PATHWAY_TEMPLATE
+pio.templates.default = "pathway"
 
 st.set_page_config(
     page_title="Pathway planner",
@@ -57,6 +49,18 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="collapsed",
 )
+
+
+@st.cache_resource
+def _warm_skill_mapper() -> bool:
+    """Preload L1 sentence-transformer model and skill cache once per session."""
+    from engine.l1_skill_mapper import warm
+
+    warm()
+    return True
+
+
+_warm_skill_mapper()
 
 
 def _inject_styles() -> None:
@@ -69,14 +73,9 @@ def _inject_styles() -> None:
 def main() -> None:
     _inject_styles()
 
-    # First load: seed demo profile so the UI has something to show.
-    if "active_ticket" not in st.session_state:
-        ticket_seed, name_seed = _demo_ticket_and_name()
-        st.session_state["active_ticket"] = ticket_seed
-        st.session_state["active_name"] = name_seed
-
     ticket: Ticket | None = st.session_state.get("active_ticket")
     name: str | None = st.session_state.get("active_name")
+    is_sample = bool(st.session_state.get("is_sample_profile", False))
 
     # Cache pipeline result by ticket_id so widget reruns don't re-invoke L4.
     cached_id = st.session_state.get("pipeline_result_ticket_id")
@@ -86,11 +85,14 @@ def main() -> None:
             st.session_state["pipeline_result_ticket_id"] = ticket.ticket_id
 
     result: PipelineResult | None = st.session_state.get("pipeline_result")
-    header.render(name)
+    header.render(name, is_sample=is_sample)
 
     if ticket is None or result is None:
         empty_state.render()
         return
+
+    _render_exit_profile_button()
+    skills_interpreted.render(ticket)
 
     left, right = st.columns([1, 4], gap="medium")
     with left:
@@ -108,11 +110,12 @@ def main() -> None:
         with tab_candidates:
             if result.skills_to_review:
                 _render_review_banner(len(result.skills_to_review))
+            income_trajectory.render(result.candidates)
+            # Samples aren't backed by a DB row, so Save has nothing to
+            # write to — profile_id stays None for them.
+            profile_id = None if is_sample else st.session_state.get("active_profile_id")
             for i, c in enumerate(result.candidates, start=1):
-                if i == 1:
-                    candidate_card.render_expanded(c, rank=i)
-                else:
-                    candidate_card.render_collapsed(c, rank=i)
+                candidate_card.render(c, rank=i, profile_id=profile_id, default_expanded=(i == 1))
 
         with tab_excluded:
             excluded_list.render(result.excluded)
@@ -127,6 +130,40 @@ def main() -> None:
     )
 
 
+def _render_exit_profile_button() -> None:
+    """Clears the active ticket/profile and returns to the empty state.
+
+    This is the only way back to the pre-result screen — without it, once
+    a profile loads there was no way to get back to "New profile" /
+    "Try a sample profile" except editing the URL or restarting the app.
+
+    Deliberately leaves `pipeline_result` / `pipeline_result_ticket_id` in
+    place. The cache is already keyed by ticket_id (see main()'s "cached_id
+    != ticket.ticket_id" check), so a genuinely new ticket recomputes
+    regardless. The only thing leaving it alone buys is: re-entering the
+    *same* ticket — which, for the fixed-id sample profiles, happens any
+    time someone exits and reloads the same sample — redisplays instantly
+    instead of re-running L4 (a real LLM call) for an identical result.
+    Clearing it here would only add latency/cost with no correctness
+    benefit.
+    """
+    _, btn_col = st.columns([5, 1])
+    with btn_col:
+        if st.button(
+            copy.EXIT_PROFILE_BUTTON,
+            key="exit_profile",
+            use_container_width=True,
+        ):
+            for key in (
+                "active_ticket",
+                "active_name",
+                "active_profile_id",
+                "is_sample_profile",
+            ):
+                st.session_state.pop(key, None)
+            st.rerun()
+
+
 def _render_review_banner(n: int) -> None:
     text = copy.SKILLS_REVIEW_BANNER.format(n=n) if n == 1 else copy.SKILLS_REVIEW_BANNER_PLURAL.format(n=n)
     st.markdown(
@@ -136,78 +173,6 @@ def _render_review_banner(n: int) -> None:
         f'</div>',
         unsafe_allow_html=True,
     )
-
-
-# =============================================================================
-# Mock data so the app runs end-to-end before the engine is wired.
-# Surface deletes everything below and imports engine.pipeline.run() once
-# Engine ships its public interface.
-# =============================================================================
-
-
-def _demo_ticket_and_name() -> tuple[Ticket, str]:
-    ticket = Ticket(
-        ticket_id="demo-hmac",
-        languages=[
-            Language(code="en", fluency_1_to_5=1),
-            Language(code="so", fluency_1_to_5=2),
-        ],
-        current_metro="Seattle, WA",
-        work_authorization=WorkAuthorization.NO,
-        has_vehicle=False,
-        has_valid_license=False,
-        transit_access=False,
-        education_highest=EducationLevel.ASSOCIATES,
-        disabilities=["cognitive"],
-        dependents=4,
-        skills=[
-            Skill(
-                skill_id="2.A.1.d",
-                skill_name="Speaking",
-                level_1_to_5=2,
-                citability=SkillCitability.TRANSFERABLE,
-                safe_framing="Front-of-house customer communication",
-                source=SkillSource.EXPLOITATION,
-            ),
-        ],
-        exclusion_zones=[],
-        exclusion_industries=[],
-        exclusion_employers=[],
-        documentation_blockers=DocumentationBlockers(
-            requires_clean_record=True,
-            requires_drivers_license=True,
-            requires_ssn=False,
-            requires_credit_check=False,
-        ),
-        graded_constraints=GradedConstraints(
-            night_shift=GradedLevel.TRIGGER,
-            isolated_workplace=GradedLevel.TRIGGER,
-            customer_facing=GradedLevel.AVOID,
-            male_dominated_team=GradedLevel.OK,
-            uniformed_role=GradedLevel.OK,
-            requires_overnight_travel=GradedLevel.AVOID,
-        ),
-        max_commute_minutes=24,
-        available_shifts=AvailableShifts(morning=True, afternoon=True, evening=False),
-        legal_profile=LegalProfile(
-            record_categories=[],
-            expungement_eligible=[],
-            jurisdiction="WA",
-        ),
-        documents_held=DocumentsHeld(
-            state_id=True,
-            drivers_license=True,
-            ssn=True,
-            work_authorization_doc=False,
-            passport=True,
-            professional_licenses=["food_handler"],
-        ),
-        industries_of_interest=[],
-        wage_minimum_hourly=Decimal("23.05"),
-        training_appetite=TrainingAppetite.EXTENSIVE,
-        long_term_goal="Find safe, daytime work close to home while continuing therapy.",
-    )
-    return ticket, "Daniela"
 
 
 if __name__ == "__main__":

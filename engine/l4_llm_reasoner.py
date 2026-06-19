@@ -10,6 +10,7 @@ import anthropic
 from pydantic import ValidationError
 
 from engine.l3_fuzzy_topsis import ScoredOccupation
+from engine.vacatur import applicable_pathways
 from models import Candidate, Occupation, Ticket, WageRange
 
 _HOURS_PER_YEAR = Decimal(2080)
@@ -30,6 +31,25 @@ class LLMSchemaError(Exception):
     """Raised when the LLM response cannot be parsed or validated."""
 
 
+def _vacatur_pathways_for(ticket: Ticket) -> list[dict]:
+    """Vacatur pathways applicable to this ticket's record, if any.
+
+    `LegalProfile` has no `trafficking_related` boolean (the models contract
+    is frozen — see models/AGENTS.md). Convention used here, matching
+    engine/l5_sensitivity.py: a record counts as trafficking-related when it
+    appears in `expungement_eligible`, since that field is documented as
+    "subset of record_categories eligible for vacatur."
+    """
+    legal = ticket.legal_profile
+    expungement_eligible = [c.value for c in legal.expungement_eligible]
+    return applicable_pathways(
+        record_categories=[c.value for c in legal.record_categories],
+        expungement_eligible=expungement_eligible,
+        jurisdiction=legal.jurisdiction,
+        trafficking_related=bool(expungement_eligible),
+    )
+
+
 def _build_profile_payload(ticket: Ticket) -> dict:
     return {
         "current_metro": ticket.current_metro,
@@ -46,6 +66,7 @@ def _build_profile_payload(ticket: Ticket) -> dict:
         "documentation_blockers": ticket.documentation_blockers.model_dump(mode="json"),
         "documents_held": ticket.documents_held.model_dump(mode="json"),
         "legal_profile": ticket.legal_profile.model_dump(mode="json"),
+        "vacatur_pathways": _vacatur_pathways_for(ticket),
         "skills": [
             {
                 "skill_id": skill.skill_id,
@@ -100,18 +121,32 @@ def _compute_wage_range(occupation: Occupation) -> WageRange:
     return WageRange(p10_hourly=p10_hourly, p50_hourly=p50_hourly, p90_hourly=p90_hourly)
 
 
+def _strip_code_fences(text: str) -> str:
+    """Remove optional markdown code fences wrapping JSON."""
+    import re
+
+    stripped = text.strip()
+    stripped = re.sub(r"^```(?:json)?\s*\n?", "", stripped)
+    stripped = re.sub(r"\n?```\s*$", "", stripped)
+    return stripped.strip()
+
+
 def _call_llm(client: anthropic.Anthropic, payload: dict) -> dict:
+    user_content = (
+        json.dumps(payload)
+        + "\n\nRespond with valid JSON only. No preamble, no code fences, "
+        "no explanation — start your response with `{` and end with `}`."
+    )
     response = client.messages.create(
         model="claude-sonnet-4-6",
         temperature=0,
         max_tokens=800,
         system=_SYSTEM_PROMPT,
         messages=[
-            {"role": "user", "content": json.dumps(payload)},
-            {"role": "assistant", "content": "{"},
+            {"role": "user", "content": user_content},
         ],
     )
-    raw_text = "{" + response.content[0].text
+    raw_text = _strip_code_fences(response.content[0].text)
     try:
         parsed = json.loads(raw_text)
     except json.JSONDecodeError as exc:
@@ -137,13 +172,27 @@ def explain(
     client = anthropic.Anthropic()
     candidates: list[Candidate] = []
 
-    for scored in ranked[:top_n]:
+    for scored in ranked:
+        if len(candidates) >= top_n:
+            break
+
+        # ~3% of occupations in the reference CSV have no BLS wage
+        # percentile columns. L3 never filters on this (missing wage data
+        # scores as neutral, per engine/AGENTS.md's "scoring step scores; it
+        # never filters" rule), so this is the first point in the pipeline
+        # where it's safe to drop a candidate — skip it rather than crash
+        # the whole results render, and let the next-ranked one take its
+        # place in the top-N.
+        try:
+            wage_range = _compute_wage_range(scored.occupation)
+        except LLMSchemaError:
+            continue
+
         payload = {
             "profile": _build_profile_payload(ticket),
             "candidate": _build_candidate_payload(scored),
         }
         llm_json = _call_llm(client, payload)
-        wage_range = _compute_wage_range(scored.occupation)
 
         try:
             candidates.append(

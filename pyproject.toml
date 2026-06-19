@@ -11,6 +11,8 @@ dependencies = [
     "cryptography>=43.0",
     "anthropic>=0.40",
     "python-dotenv>=1.0",
+    "sentence-transformers>=5.6.0",
+    "scikit-learn>=1.9.0",
 ]
 
 [project.optional-dependencies]
@@ -38,6 +40,7 @@ ignore = ["N999"]  # Streamlit pages use PascalCase by convention
 
 
 [tool.pytest.ini_options]
+pythonpath = ["."]
 markers = [
     "unit: fast unit tests (no LLM, no embeddings)",
     "integration: end-to-end tests, may use cached LLM responses",

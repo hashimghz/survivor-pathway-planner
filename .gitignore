@@ -16,3 +16,6 @@ Thumbs.db
 dist/
 build/
 *.egg-info/
+data/processed/*.npz
+CHAT_SUMMARY.md
+project_handoff.md

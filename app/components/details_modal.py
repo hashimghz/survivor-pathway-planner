@@ -11,7 +11,7 @@ from html import escape
 
 import streamlit as st
 
-from app import copy
+from app import copy, db_access
 from models import Candidate, CriteriaBreakdown
 
 HIGH_FIT_THRESHOLD = 0.55
@@ -98,12 +98,15 @@ def _wage_html(candidate: Candidate) -> str:
     span = p90 - p10 if p90 > p10 else 1
     median_pct = max(0, min(100, round(((p50 - p10) / span) * 100)))
 
+    # The track's own left/right edges ARE this occupation's p10 and p90
+    # (that's what the endpoint labels show), so the filled range always
+    # spans the full track. The median tick is the only marker that varies.
     bar = (
         f'<div class="pp-wage">'
         f'  <span class="pp-label">{copy.CARD_WAGE_LABEL}</span>'
         f'  <span class="endpoint">${p10:.2f}</span>'
         f'  <div class="pp-wage-track">'
-        f'    <div class="pp-wage-range" style="left: 18%; right: 12%;"></div>'
+        f'    <div class="pp-wage-range" style="left: 0%; right: 0%;"></div>'
         f'    <div class="pp-wage-median" style="left: {median_pct}%;"></div>'
         f"  </div>"
         f'  <span class="endpoint">${p90:.2f}</span>'
@@ -143,12 +146,38 @@ def _details_html(candidate: Candidate) -> str:
     )
 
 
-def render(candidate: Candidate) -> None:
-    """Open a dialog showing the full candidate detail view."""
+def render(candidate: Candidate, profile_id: str | None = None) -> None:
+    """Open a dialog showing the full candidate detail view.
+
+    Includes a Save toggle when `profile_id` is set (a real, non-sample
+    profile) — this is the only Save entry point for candidates ranked
+    below #1, since collapsed cards only expose a Details button.
+    """
     title = candidate.occupation.title
+    occupation_code = candidate.occupation.code
 
     @st.dialog(title)
     def _body() -> None:
         st.markdown(_details_html(candidate), unsafe_allow_html=True)
+
+        if profile_id is None:
+            st.button(
+                copy.CARD_BUTTON_SAVE,
+                key=f"modal_save_{occupation_code}",
+                type="primary",
+                disabled=True,
+                help=copy.CARD_SAVE_SAMPLE_DISABLED,
+            )
+            return
+
+        is_saved = occupation_code in db_access.saved_candidate_codes(profile_id)
+        label = copy.CARD_BUTTON_SAVED if is_saved else copy.CARD_BUTTON_SAVE
+        if st.button(
+            label,
+            key=f"modal_save_{occupation_code}",
+            type="secondary" if is_saved else "primary",
+        ):
+            db_access.toggle_saved_candidate(profile_id, occupation_code, is_saved)
+            st.rerun()
 
     _body()

@@ -17,6 +17,7 @@ from __future__ import annotations
 APP_TITLE = "Pathway planner"
 ACTIVE_PROFILE_LABEL = "Active:"
 NO_PROFILE_LABEL = "No profile loaded"
+EXIT_PROFILE_BUTTON = "Exit profile"
 
 # Tabs
 TAB_CANDIDATES = "Candidates"
@@ -44,7 +45,11 @@ CARD_WAGE_LABEL = "WAGE"
 CARD_RISKS_LABEL = "WORTH VERIFYING"
 CARD_UPSKILL_LABEL = "ONE NEXT STEP"
 CARD_BUTTON_SAVE = "Save"
+CARD_BUTTON_SAVED = "Saved"
 CARD_BUTTON_DETAILS = "Details"
+CARD_BUTTON_EXPAND = "Expand"
+CARD_BUTTON_COLLAPSE = "Collapse"
+CARD_SAVE_SAMPLE_DISABLED = "Saving isn't available for sample profiles — submit a real profile first."
 
 # Excluded panel
 EXCLUDED_EMPTY = "Every catalogued occupation cleared the constraints. " \
@@ -70,6 +75,22 @@ SKILLS_REVIEW_BANNER = "{n} skill needs your review"
 SKILLS_REVIEW_BANNER_PLURAL = "{n} skills need your review"
 SKILLS_REVIEW_BUTTON = "Review"
 
+# Skills-interpreted panel (surfaces the free-text -> O*NET cluster mapping)
+SKILLS_INTERPRETED_HEADING = "How the engine interpreted the skills"
+SKILLS_INTERPRETED_NO_MATCH = "No confident match — consider rephrasing"
+
+# Income trajectory chart
+CHART_TRAJECTORY_TITLE = "Projected income — top matches"
+CHART_TRAJECTORY_XAXIS = "Months since placement"
+CHART_TRAJECTORY_YAXIS = "Annual income ($)"
+CHART_TRAJECTORY_CAPTION = (
+    "Projection assumes placement near each occupation's 10th-percentile wage, "
+    "moving toward its median over 24 months — a modeling assumption, not a "
+    "guarantee. The shaded band is each occupation's full 10th–90th "
+    "percentile wage range, not a forecast interval."
+)
+CHART_TRAJECTORY_EMPTY = "No candidates to project an income trajectory for."
+
 # Empty state
 EMPTY_TITLE = "No profile loaded"
 EMPTY_BODY = (
@@ -78,6 +99,16 @@ EMPTY_BODY = (
 )
 EMPTY_BUTTON_LOAD = "Load profile"
 EMPTY_BUTTON_NEW = "New profile"
+
+# Sample profile picker (demo/at-a-glance only — not the primary intake flow)
+EMPTY_SAMPLE_HEADING = "Or view a sample profile"
+EMPTY_SAMPLE_BODY = (
+    "For seeing the engine work at a glance. Not a substitute for entering "
+    "a real survivor through New profile."
+)
+EMPTY_SAMPLE_SELECT_LABEL = "Sample profile"
+EMPTY_SAMPLE_BUTTON = "Load sample"
+SAMPLE_TAG_LABEL = "SAMPLE DATA — NOT A REAL PROFILE"
 
 # Footer / accountability strip
 ACCOUNTABILITY = (
@@ -149,13 +180,9 @@ PROFILE_FIELD_LABELS = {
 PROFILE_DOCUMENTATION_BLOCKERS_HEADING = "Documentation blockers"
 PROFILE_DOCUMENTS_HELD_HEADING = "Documents held"
 
-PROFILE_SKILLS_SOURCE_LABEL = "Skills source"
-PROFILE_SKILLS_SOURCE_SYNTHETIC = "Synthetic profile set"
-PROFILE_SKILLS_SOURCE_SAVED = "Saved profile"
-PROFILE_SKILLS_PICK_SYNTHETIC = "Choose synthetic profile"
-PROFILE_SKILLS_PICK_SAVED = "Choose saved profile"
-PROFILE_SKILLS_SOURCE_UNAVAILABLE = (
-    "No skills source available — load data/raw/survivors.json first."
+PROFILE_SKILLS_TEXT_LABEL = (
+    "Survivor's skills (one per line, or comma-separated). "
+    "Free text is fine — the engine will match against O*NET clusters."
 )
 
 PROFILE_WORK_AUTH_LABELS = {

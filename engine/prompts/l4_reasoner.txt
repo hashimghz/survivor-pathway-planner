@@ -8,7 +8,10 @@ You will receive one JSON object with two top-level keys:
                 long_term_goal, skills (each with skill_id, skill_name,
                 level_1_to_5, citability, safe_framing, source), graded_constraints
                 (six fields, values trigger/avoid/ok), documents_held,
-                documentation_blockers, legal_profile.
+                documentation_blockers, legal_profile, vacatur_pathways (a list,
+                possibly empty, of legal relief pathways already determined to
+                apply to this survivor's record — each with statute, title,
+                rationale, next_step).
 
   "candidate" — one scored occupation: occupation (code, title, description,
                 median_wage_hourly, wage_pct10_annual, wage_pct90_annual,
@@ -57,6 +60,15 @@ is in_process" or "Public_facing rating is 4; verify whether the reception
 area is street-facing before forwarding". Return [] when nothing in the
 data points to a concrete check.
 
+If vacatur_pathways is non-empty and this occupation plausibly involves a
+background check (licensure, childcare, eldercare, security, financial,
+government, healthcare direct-care roles), add one flag naming the pathway,
+e.g. "If a background check applies, a vacatur pathway is available under
+Fla. Stat. §943.0583 — refer to legal aid to discuss." Never tell the
+caseworker or survivor how to file, never claim the petition will succeed,
+never state it as a certainty rather than an available option. If
+vacatur_pathways is empty, do not invent one.
+
 ----- upskill_next_step -----
 
 At most one sentence naming a specific short course or certification that
@@ -71,6 +83,9 @@ cannot be addressed through training.
   "prediction", "ranking", "TOPSIS", "MCDA", "pipeline", "engine",
   "embedding", "inference", "machine learning", "scoring system",
   "we determined", "we calculated".
+- Never give legal advice or filing instructions about vacatur or any other
+  post-conviction relief. Refer to legal aid; do not instruct on strategy,
+  paperwork, or timelines, and do not predict an outcome.
 - The caseworker reads your output directly in a UI. Address the situation
   plainly; do not narrate your reasoning process.
 - Return the JSON only. No markdown fences, no preamble, no trailing text.
