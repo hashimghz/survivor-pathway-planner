@@ -10,6 +10,15 @@ import pandas as pd
 
 from models import Occupation, OccupationSkill, Profile
 
+_DEFAULT_OCCUPATIONS_PATH = "data/raw/occupations.csv"
+
+# Module-level cache, keyed by path. The occupations reference data never
+# changes during the process's life, so it's parsed once and reused —
+# mirrors the lazy-cache pattern in engine/l1_skill_mapper.py. Deliberately
+# plain Python (no Streamlit import here) so this module stays usable
+# outside the app, e.g. from tests and scripts.
+_occupations_cache: dict[str, list[Occupation]] = {}
+
 
 def load_survivors(path: Path | str = "data/raw/survivors.json") -> list[Profile]:
     with Path(path).open(encoding="utf-8") as f:
@@ -66,6 +75,32 @@ def _row_to_occupation(row: pd.Series) -> Occupation:
     )
 
 
-def load_occupations(path: Path | str = "data/raw/occupations.csv") -> list[Occupation]:
+def _load_occupations_uncached(path: Path | str) -> list[Occupation]:
     df = pd.read_csv(path)
     return [_row_to_occupation(row) for _, row in df.iterrows()]
+
+
+def load_occupations(path: Path | str = _DEFAULT_OCCUPATIONS_PATH) -> list[Occupation]:
+    """Load occupations, parsed once per unique path and cached for the
+    life of the process.
+
+    Previously this re-read and re-parsed the full CSV (988 rows, each
+    through pydantic validation) on every call — including once per
+    pipeline run, since engine/pipeline.py calls this unconditionally.
+    The data never changes at runtime, so that was pure waste. Callers
+    that need to force a fresh read (e.g. tests against a different file)
+    can still do so by passing a different `path`.
+    """
+    key = str(path)
+    if key not in _occupations_cache:
+        _occupations_cache[key] = _load_occupations_uncached(path)
+    return _occupations_cache[key]
+
+
+def warm(path: Path | str = _DEFAULT_OCCUPATIONS_PATH) -> None:
+    """Eagerly populate the occupations cache.
+
+    Call at app startup so the first real pipeline run doesn't pay the
+    CSV-parse cost — mirrors engine.l1_skill_mapper.warm().
+    """
+    load_occupations(path)

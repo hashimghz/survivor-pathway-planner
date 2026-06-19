@@ -52,15 +52,30 @@ st.set_page_config(
 
 
 @st.cache_resource
-def _warm_skill_mapper() -> bool:
-    """Preload L1 sentence-transformer model and skill cache once per session."""
-    from engine.l1_skill_mapper import warm
+def _warm_resources() -> bool:
+    """Preload everything heavy once per server process, before the first
+    real request reaches it: L1's sentence-transformer model + skill
+    embedding cache, and the occupations reference data.
 
-    warm()
+    Both used to lazy-load on first use — the L1 model on the first
+    map_skills() call, and the occupations CSV on *every* pipeline run
+    with no caching at all (see data/loader.py). Both now load here
+    instead, once per process. @st.cache_resource means this function's
+    body only actually runs once across every session on this server —
+    later calls (including every script rerun) return instantly from
+    cache, so wrapping the call site in a spinner only shows real wait
+    time on that first run, not on every rerun after.
+    """
+    from data.loader import warm as warm_occupations
+    from engine.l1_skill_mapper import warm as warm_skill_mapper
+
+    warm_skill_mapper()
+    warm_occupations()
     return True
 
 
-_warm_skill_mapper()
+with st.spinner("Loading reference data..."):
+    _warm_resources()
 
 
 def _inject_styles() -> None:
