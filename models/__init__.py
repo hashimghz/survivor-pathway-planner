@@ -1,10 +1,14 @@
-"""Contracts for the Survivor Career Pathway Planner.
+"""Contracts for the Pathway Planner.
 
 FROZEN after Day 0. Changes require the `contract-change` PR label and
 acknowledgment from all three agent owners. See models/AGENTS.md.
 
-Every data object that crosses a layer boundary is defined here. No business
+Every data object that crosses a layer boundary lives here. No business
 logic, no I/O, no imports from engine/, app/, core/, db/, or data/.
+
+Naming: the UI surface uses domain terms (Candidate, Excluded, Intervention),
+never internal pipeline language. Internal pipeline modules may still organise
+themselves as L1-L5 in code, but the contracts themselves carry no layer names.
 """
 
 from __future__ import annotations
@@ -14,11 +18,11 @@ from decimal import Decimal
 from enum import Enum
 from typing import Annotated, Optional
 
-from pydantic import BaseModel, Field, condecimal, conint
+from pydantic import BaseModel, ConfigDict, Field, conint
 
 
 # =============================================================================
-# Enums — exhaustive. If a real value isn't here, the pipeline fails loud.
+# Enums — match the values that appear in the teammate's data exactly.
 # =============================================================================
 
 
@@ -34,7 +38,7 @@ class SafeContactMethod(str, Enum):
 
 
 class Industry(str, Enum):
-    """Controlled vocabulary used for both exclusion_industries and industries_of_interest."""
+    """Used for both exclusion_industries and industries_of_interest."""
 
     HOSPITALITY = "hospitality"
     TRANSPORTATION = "transportation"
@@ -46,15 +50,13 @@ class Industry(str, Enum):
     RETAIL_OVERNIGHT = "retail_overnight"
 
 
-class GradedConstraintLevel(str, Enum):
+class GradedLevel(str, Enum):
     TRIGGER = "trigger"
     AVOID = "avoid"
     OK = "ok"
 
 
 class SkillCitability(str, Enum):
-    """Caseworker's judgment of whether/how a skill can appear on a resume."""
-
     DIRECT = "direct"
     TRANSFERABLE = "transferable"
     UNSAFE = "unsafe"
@@ -77,8 +79,8 @@ class RecordCategory(str, Enum):
 
 class EducationLevel(str, Enum):
     NONE = "none"
-    SOME_HIGH_SCHOOL = "some_high_school"
-    HIGH_SCHOOL_OR_GED = "high_school_or_ged"
+    SOME_HS = "some_hs"
+    GED = "ged"
     SOME_COLLEGE = "some_college"
     ASSOCIATES = "associates"
     BACHELORS = "bachelors"
@@ -87,28 +89,22 @@ class EducationLevel(str, Enum):
 
 class TrainingAppetite(str, Enum):
     NONE = "none"
-    SHORT_COURSE = "short_course"  # under 3 months
-    CERTIFICATE = "certificate"  # 3–12 months
-    DEGREE = "degree"  # 1+ years
-
-
-class Shift(str, Enum):
-    MORNING = "morning"
-    AFTERNOON = "afternoon"
-    EVENING = "evening"
+    SHORT = "short"
+    MODERATE = "moderate"
+    EXTENSIVE = "extensive"
 
 
 class ExclusionRule(str, Enum):
-    """Named reasons a candidate can be excluded by L2.
+    """Named reasons a candidate can be excluded.
 
-    Every ExcludedCandidate must carry one of these. The UI's filtered-out
-    panel groups by this enum. L5 iterates this enum for relaxation analysis.
+    The UI groups the Excluded panel by these values. Internally, the engine's
+    veto step assigns one of these to every excluded occupation.
     """
 
     GEOGRAPHY = "geography"
-    INDUSTRY_EXCLUSION = "industry_exclusion"
-    EMPLOYER_EXCLUSION = "employer_exclusion"
-    DOCUMENTATION_BLOCKER = "documentation_blocker"
+    INDUSTRY = "industry"
+    EMPLOYER = "employer"
+    DOCUMENTATION = "documentation"
     WORK_AUTHORIZATION = "work_authorization"
     CRIMINAL_RECORD = "criminal_record"
     WAGE_FLOOR = "wage_floor"
@@ -121,53 +117,61 @@ class ExclusionRule(str, Enum):
 Confidence = Annotated[float, Field(ge=0.0, le=1.0)]
 Level1To5 = Annotated[int, Field(ge=1, le=5)]
 HourlyWage = Annotated[Decimal, Field(gt=0, decimal_places=2)]
+WorkContextRating = Annotated[float, Field(ge=1.0, le=5.0)]
 
 
 # =============================================================================
-# Profile sub-types (input)
+# Profile sub-types (matching teammate's survivors.json shape)
 # =============================================================================
+
+
+class Identity(BaseModel):
+    """PII grouped together. Encrypted at rest. Stripped at the anonymiser."""
+
+    legal_name: str
+    preferred_name: str
+    pronouns: str
+    dob: date
+    safe_phone: str
+    safe_contact_method: SafeContactMethod
+    caseworker_notes: str = ""
 
 
 class Language(BaseModel):
-    code: str = Field(description="ISO 639-1 code, e.g. 'en', 'es'")
+    code: str = Field(description="ISO 639-1, e.g. 'en', 'so', 'es'")
     fluency_1_to_5: Level1To5
 
 
-class ExclusionZone(BaseModel):
-    """A geographic area to avoid (former trafficker territory, etc.)."""
+class Skill(BaseModel):
+    """A skill, already mapped to its O*NET id.
 
-    lat: float
-    lng: float
-    radius_mi: float = Field(gt=0)
-
-
-class RawSkill(BaseModel):
-    """A skill as the caseworker entered it, before L1 mapping.
-
-    `citability`, `safe_framing`, and `source` are the caseworker's judgment.
-    L1 does not override these — it only attaches an O*NET ID.
+    The teammate's survivors.json provides skills pre-mapped, so there is no
+    free-text-to-O*NET embedding step in the pipeline. Citability and
+    safe_framing are the caseworker's judgement; the engine does not override
+    them.
     """
 
-    skill_id: str = Field(description="UUID for tracking this skill across the pipeline")
-    text: str = Field(description="Free-text description from the caseworker")
+    skill_id: str = Field(description="O*NET skill id, e.g. '2.A.1.d'")
+    skill_name: str = Field(description="O*NET canonical skill name")
     level_1_to_5: Level1To5
     citability: SkillCitability
     safe_framing: str = Field(description="Resume-safe rewording the caseworker approved")
     source: SkillSource
 
 
-class HardConstraints(BaseModel):
-    """Binary rules. L2 cuts on any failure. Re-evaluated by L5 under relaxation."""
+class ExclusionZone(BaseModel):
+    lat: float
+    lng: float
+    radius_mi: float = Field(gt=0)
 
-    work_authorization: WorkAuthorization
-    has_vehicle: bool
-    has_valid_license: bool
-    transit_access: bool
-    exclusion_zones: list[ExclusionZone] = Field(default_factory=list)
-    exclusion_industries: list[Industry] = Field(default_factory=list)
-    exclusion_employers: list[str] = Field(
-        default_factory=list, description="Employer IDs (free-form strings for the demo)"
-    )
+
+class DocumentationBlockers(BaseModel):
+    """Job-side requirements that may exclude the survivor.
+
+    These are the requirements typical postings impose. The veto step checks
+    them against `documents_held` and `legal_profile`.
+    """
+
     requires_clean_record: bool
     requires_drivers_license: bool
     requires_ssn: bool
@@ -175,36 +179,39 @@ class HardConstraints(BaseModel):
 
 
 class GradedConstraints(BaseModel):
-    """Soft constraints. L3 scores against these, never filters."""
+    """Soft constraints. Scored in the fit calculation; never used as filters.
 
-    night_shift: GradedConstraintLevel
-    isolated_workplace: GradedConstraintLevel
-    customer_facing: GradedConstraintLevel
-    male_dominated_team: GradedConstraintLevel
-    uniformed_role: GradedConstraintLevel
+    `requires_overnight_travel` is here (not in stability fields) because the
+    teammate's data places it here.
+    """
+
+    night_shift: GradedLevel
+    isolated_workplace: GradedLevel
+    customer_facing: GradedLevel
+    male_dominated_team: GradedLevel
+    uniformed_role: GradedLevel
+    requires_overnight_travel: GradedLevel
 
 
-class StabilityNeeds(BaseModel):
-    """Practical preferences. L3 scores against these as fit dimensions."""
-
-    requires_overnight_travel: GradedConstraintLevel
-    max_commute_minutes: conint(gt=0)
-    available_shifts: list[Shift] = Field(min_length=1)
-    wage_minimum_hourly: HourlyWage
+class AvailableShifts(BaseModel):
+    morning: bool
+    afternoon: bool
+    evening: bool
 
 
 class LegalProfile(BaseModel):
-    """Criminal-record context. Drives L2's criminal_record rule and L5's vacatur hint."""
+    """Criminal-record context. Drives the criminal_record veto and vacatur hints."""
 
     record_categories: list[RecordCategory] = Field(default_factory=list)
     expungement_eligible: list[RecordCategory] = Field(
-        default_factory=list, description="Subset of record_categories eligible for vacatur"
+        default_factory=list,
+        description="Subset of record_categories eligible for vacatur",
     )
-    jurisdiction: str = Field(description="State code, e.g. 'FL'")
+    jurisdiction: str = Field(description="State code, e.g. 'WA'")
 
 
-class DocumentationStatus(BaseModel):
-    """What the survivor has on hand. Drives L2's documentation_blocker rule."""
+class DocumentsHeld(BaseModel):
+    """What the survivor has on hand."""
 
     state_id: bool
     drivers_license: bool
@@ -214,172 +221,165 @@ class DocumentationStatus(BaseModel):
     professional_licenses: list[str] = Field(default_factory=list)
 
 
-class Goals(BaseModel):
-    industries_of_interest: list[Industry] = Field(default_factory=list)
-    training_appetite: TrainingAppetite
-    long_term_goal: str = Field(default="", description="Freetext aspiration")
-
-
 # =============================================================================
-# Profile (PII present; lives in db/ only)
+# Profile (PII included; lives only in db/ and core/)
 # =============================================================================
 
 
 class Profile(BaseModel):
-    """Full survivor record. PII fields are AES-256-GCM encrypted at rest.
+    """Full survivor record. PII (in `identity`) is encrypted at rest.
 
-    NEVER leaves db/ and core/. The pipeline (L1-L5) operates on Ticket only.
-    The UI fetches a Profile to render the entry form, but downstream of
-    submission only the Ticket is in scope.
+    Never leaves db/ and core/. Pipeline operates on Ticket only.
+    Matches the shape of the teammate's survivors.json exactly.
     """
 
-    id: str = Field(description="Profile UUID")
+    model_config = ConfigDict(populate_by_name=True)
 
-    # PII (encrypted at rest in the DB layer)
-    legal_name: str
-    preferred_name: str
-    pronouns: str
-    dob: date
-    safe_phone: str
-    safe_contact_method: SafeContactMethod
-    caseworker_notes: str = ""
+    identity: Identity
 
-    # Non-PII structured fields
     languages: list[Language]
-    current_metro: str = Field(description="City/region. NOT street address.")
+    current_metro: str = Field(description="City/region; not street address")
+    work_authorization: WorkAuthorization
+    has_vehicle: bool
+    has_valid_license: bool
+    transit_access: bool
     education_highest: EducationLevel
     disabilities: list[str] = Field(default_factory=list)
-    dependents: conint(ge=0, le=5)
+    dependents: conint(ge=0, le=10)
 
-    skills_raw: list[RawSkill]
-    hard_constraints: HardConstraints
+    skills: list[Skill] = Field(default_factory=list)
+
+    # Free-text skill strings entered by the caseworker.
+    existing_skills: list[str] = Field(default_factory=list)
+
+    exclusion_zones: list[ExclusionZone] = Field(default_factory=list)
+    exclusion_industries: list[Industry] = Field(default_factory=list)
+    exclusion_employers: list[str] = Field(default_factory=list)
+
+    documentation_blockers: DocumentationBlockers
     graded_constraints: GradedConstraints
-    stability_needs: StabilityNeeds
+
+    max_commute_minutes: conint(gt=0)
+    available_shifts: AvailableShifts
+
     legal_profile: LegalProfile
-    documentation_status: DocumentationStatus
-    goals: Goals
+    documents_held: DocumentsHeld
+
+    industries_of_interest: list[Industry] = Field(default_factory=list)
+    wage_minimum_hourly: HourlyWage
+    training_appetite: TrainingAppetite
+    long_term_goal: str = ""
+
+    # Caseworker curation of engine output. Never read by the engine and
+    # never carried onto Ticket (see core/anonymizer.py's exclude set) —
+    # this is purely "which results did the caseworker flag," not survivor
+    # intake data, so it has no business crossing into the pipeline.
+    saved_candidate_codes: list[str] = Field(
+        default_factory=list,
+        description="O*NET-SOC codes of candidates the caseworker saved for follow-up.",
+    )
 
 
 # =============================================================================
-# Ticket (anonymous, flows through the pipeline)
+# Ticket (anonymous; what flows through the pipeline)
 # =============================================================================
 
 
 class Ticket(BaseModel):
-    """Anonymous payload produced by core.anonymizer.
+    """Anonymous payload produced by the anonymiser.
 
     No PII. Stable ticket_id derived from HMAC-SHA-256(profile_uuid, pepper).
-    Every downstream layer (L1-L5) operates on this object.
     """
 
-    ticket_id: str = Field(description="HMAC-SHA-256 of profile UUID with project pepper")
-    skills_raw: list[RawSkill]
+    ticket_id: str = Field(description="HMAC of the profile UUID with the project pepper")
+
     languages: list[Language]
     current_metro: str
+    work_authorization: WorkAuthorization
+    has_vehicle: bool
+    has_valid_license: bool
+    transit_access: bool
     education_highest: EducationLevel
-    hard_constraints: HardConstraints
+    disabilities: list[str]
+    dependents: conint(ge=0, le=10)
+
+    skills: list[Skill]
+
+    # Free-text skill strings entered by the caseworker (Phase 4 form).
+    existing_skills: list[str] = Field(default_factory=list)
+    # L1 mapper output: each entry has "input", "matches" with onet_id/onet_name/confidence.
+    mapped_skills: list[dict] = Field(default_factory=list)
+
+    exclusion_zones: list[ExclusionZone]
+    exclusion_industries: list[Industry]
+    exclusion_employers: list[str]
+
+    documentation_blockers: DocumentationBlockers
     graded_constraints: GradedConstraints
-    stability_needs: StabilityNeeds
+
+    max_commute_minutes: conint(gt=0)
+    available_shifts: AvailableShifts
+
     legal_profile: LegalProfile
-    documentation_status: DocumentationStatus
-    goals: Goals
+    documents_held: DocumentsHeld
+
+    industries_of_interest: list[Industry]
+    wage_minimum_hourly: HourlyWage
+    training_appetite: TrainingAppetite
+    long_term_goal: str = ""
 
 
 # =============================================================================
-# L1 output
+# Occupation (matches the teammate's occupations.csv columns)
 # =============================================================================
 
 
-class MappedSkill(BaseModel):
-    """A skill enriched with its canonical O*NET ID by L1.
+class OccupationSkill(BaseModel):
+    """A skill an O*NET occupation calls for."""
 
-    `citability`, `safe_framing`, `source` pass through unchanged from RawSkill.
+    id: str = Field(description="O*NET skill id")
+    name: str
+
+
+class Occupation(BaseModel):
+    """An O*NET occupation with the work-context fields the engine uses.
+
+    Field names match the columns in the teammate's occupations.csv.
     """
 
-    skill_id: str
-    raw_text: str
-    onet_skill_id: str = Field(description="O*NET skill identifier, e.g. '2.A.1.f'")
-    canonical_name: str
-    confidence: Confidence = Field(description="Cosine similarity to top-1 O*NET skill")
-    level_1_to_5: Level1To5
-    citability: SkillCitability
-    safe_framing: str
-    source: SkillSource
-
-
-class LowConfidenceMapping(BaseModel):
-    """Skill whose top-1 match fell below the L1 confidence threshold (0.6).
-
-    Surfaced to the caseworker for manual disambiguation. NEVER silently dropped.
-    """
-
-    skill_id: str
-    raw_text: str
-    top_candidates: list[tuple[str, str, Confidence]] = Field(
-        description="(onet_skill_id, canonical_name, confidence) for top-3 below threshold"
-    )
-
-
-class MappedTicket(Ticket):
-    """Ticket after L1: original skills_raw plus mapped_skills and any low-confidence misses."""
-
-    mapped_skills: list[MappedSkill]
-    low_confidence_mappings: list[LowConfidenceMapping] = Field(default_factory=list)
-
-
-# =============================================================================
-# Occupation base record
-# =============================================================================
-
-
-class OccupationCandidate(BaseModel):
-    """Base O*NET occupation record. Loaded from data/onet_catalog."""
-
-    onet_code: str = Field(description="e.g. '43-4051.00'")
+    code: str = Field(description="O*NET-SOC code, e.g. '29-2071.00'")
     title: str
-    soc_major: str = Field(description="2-digit SOC group, e.g. '43'")
-    median_hourly_wage: Optional[HourlyWage] = None
-    projected_growth_pct: Optional[float] = None
+    description: str = ""
+
+    job_zone: Optional[float] = Field(default=None, description="1-5; training/experience intensity")
+    education_level: Optional[float] = Field(default=None, description="1-12 O*NET education enum")
+
+    contact_with_others: Optional[WorkContextRating] = None
+    physical_proximity: Optional[WorkContextRating] = None
+    violence_exposure: Optional[WorkContextRating] = None
+    public_facing: Optional[WorkContextRating] = None
+    schedule_irregularity: Optional[WorkContextRating] = None
+
+    isolated_workplace: bool = False
+    high_surveillance: bool = False
+
+    median_wage_annual: Optional[float] = None
+    wage_pct10_annual: Optional[float] = None
+    wage_pct90_annual: Optional[float] = None
+    median_wage_hourly: Optional[HourlyWage] = None
+    total_employment: Optional[float] = None
+
+    skills: list[OccupationSkill] = Field(default_factory=list)
+    training_required: Optional[str] = None
 
 
 # =============================================================================
-# L2 output
-# =============================================================================
-
-
-class FilteredCandidate(BaseModel):
-    """Occupation that survived L2's hard constraints."""
-
-    occupation: OccupationCandidate
-
-
-class ExcludedCandidate(BaseModel):
-    """Occupation cut by L2, with the named rule that cut it.
-
-    Feeds both the UI's filtered-out panel AND L5's sensitivity analysis.
-    """
-
-    occupation: OccupationCandidate
-    failed_rule: ExclusionRule
-    details: str = Field(
-        description=(
-            "Human-readable detail. E.g. 'hospitality' for industry_exclusion, "
-            "'requires_drivers_license' for documentation_blocker."
-        )
-    )
-
-
-# =============================================================================
-# L3 output
+# Fit dimensions and Candidate output (no layer names in these types)
 # =============================================================================
 
 
 class CriteriaBreakdown(BaseModel):
-    """Per-dimension fit scores in [0, 1]. Every dimension is named.
-
-    The UI renders this as a radar/bar chart so the caseworker can see WHY a
-    candidate scored where it did. This is the explainability surface for L3.
-    """
+    """Per-dimension fit scores in [0, 1]. The UI renders these as bars."""
 
     skill_match: Confidence
     wage_fit: Confidence
@@ -392,89 +392,116 @@ class CriteriaBreakdown(BaseModel):
     schedule_fit: Confidence
 
 
-class RankedCandidate(BaseModel):
-    """Output of L3's fuzzy TOPSIS. The ranking L4 receives is the ranking L4 keeps."""
-
-    occupation: OccupationCandidate
-    topsis_score: Confidence
-    criteria_breakdown: CriteriaBreakdown
-
-
-# =============================================================================
-# L4 output
-# =============================================================================
-
-
 class WageRange(BaseModel):
-    """Computed from BLS data via data.bls_wage_lookup(onet_code). NEVER hardcoded."""
+    """Computed from BLS columns on the occupation row. Never hardcoded."""
 
     p10_hourly: HourlyWage
     p50_hourly: HourlyWage
     p90_hourly: HourlyWage
 
 
-class EnrichedCandidate(BaseModel):
-    """RankedCandidate plus LLM-generated explanation.
+class Candidate(BaseModel):
+    """A scored, explained occupation. The UI's primary surface.
 
-    L4 produces this from the structured fields of RankedCandidate + the Ticket.
-    The LLM never sees PII and never reorders the ranking.
+    `fit_explanation` is the engine-generated prose the UI renders as the
+    description paragraph under the criteria bars. `safe_resume_framings`
+    respect each skill's citability.
     """
 
-    occupation: OccupationCandidate
-    topsis_score: Confidence
-    criteria_breakdown: CriteriaBreakdown
+    occupation: Occupation
+    fit_score: Confidence
 
-    fit_explanation: str = Field(description="2-3 sentences explaining why this candidate scored well")
-    safe_resume_framing: list[str] = Field(
-        description="Resume bullets respecting each MappedSkill.citability and safe_framing"
+    criteria_breakdown: CriteriaBreakdown
+    fit_explanation: str = Field(
+        description="2-3 sentences explaining why this candidate scored where it did"
+    )
+    safe_resume_framings: list[str] = Field(
+        description="Resume bullets respecting each Skill.citability and safe_framing"
     )
     risk_flags: list[str] = Field(
         default_factory=list,
-        description="Caseworker-verifiable concerns, e.g. 'verify whether reception desk is street-facing'",
+        description="Caseworker-verifiable concerns, e.g. 'verify whether reception is street-facing'",
     )
-    upskill_next_step: str = Field(default="", description="One concrete next training step, if any")
+    upskill_next_step: str = Field(
+        default="",
+        description="One concrete training step that would raise fit, if any",
+    )
     wage_range: WageRange
 
 
 # =============================================================================
-# L5 output
+# Excluded occupations
 # =============================================================================
 
 
-class SensitivityEntry(BaseModel):
-    constraint: str = Field(description="The hard constraint relaxed, e.g. 'requires_drivers_license'")
+class Excluded(BaseModel):
+    """An occupation cut by a hard-constraint rule, with the named rule.
+
+    Feeds the Excluded panel and the Interventions analysis.
+    """
+
+    occupation: Occupation
+    rule: ExclusionRule
+    detail: str = Field(
+        description="Human-readable detail, e.g. 'hospitality' for industry, "
+        "'requires_drivers_license' for documentation"
+    )
+
+
+# =============================================================================
+# Interventions (what would unlock more options if it changed)
+# =============================================================================
+
+
+class Intervention(BaseModel):
+    constraint: str = Field(description="The constraint that would change, e.g. 'requires_drivers_license'")
     jobs_unlocked: conint(ge=0)
-    intervention_hint: str = Field(
-        description="Caseworker action, e.g. 'DMV documentation pathway', or 'not actionable' for safety-critical"
+    hint: str = Field(
+        description="One-sentence caseworker action, e.g. 'DMV documentation pathway'"
     )
     actionable: bool = Field(
-        description="False for safety-critical relaxations (industry exclusions, exclusion zones)"
+        description="False for safety-critical constraints (industry exclusions, exclusion zones)"
     )
 
 
-class SensitivityReport(BaseModel):
-    """L5 output. Entries sorted by jobs_unlocked descending."""
+class InterventionReport(BaseModel):
+    """All interventions, sorted by jobs_unlocked descending."""
 
-    entries: list[SensitivityEntry]
+    entries: list[Intervention]
 
 
 # =============================================================================
-# Final container handed to the UI
+# Skills the caseworker needs to confirm
+# =============================================================================
+
+
+class SkillToReview(BaseModel):
+    """A skill the engine flagged as uncertain.
+
+    Surfaced in the UI as a banner above Candidates when present. Empty when
+    every skill mapped cleanly. The UI never says 'low confidence mapping' or
+    references the layer that produced this — it just says 'review this skill'.
+    """
+
+    skill_id: str
+    skill_name: str
+    reason: str = Field(description="Plain-language reason, no layer references")
+
+
+# =============================================================================
+# The single object the UI consumes
 # =============================================================================
 
 
 class PipelineResult(BaseModel):
-    """The only thing engine.pipeline.run() returns. The UI's contract.
+    """The only thing the engine returns to the UI.
 
-    Carries everything the four required UI panels need:
-      - enriched_candidates → Results page
-      - excluded_set → FilteredOut page
-      - sensitivity_report → Sensitivity page
-      - low_confidence_mappings → LowConfidence page
+    Fields are named in domain terms. The UI never references pipeline layers.
     """
 
     ticket_id: str
-    enriched_candidates: list[EnrichedCandidate] = Field(description="Top-N after L4")
-    excluded_set: list[ExcludedCandidate]
-    sensitivity_report: SensitivityReport
-    low_confidence_mappings: list[LowConfidenceMapping] = Field(default_factory=list)
+    candidates: list[Candidate] = Field(description="Top-N ranked candidates")
+    excluded: list[Excluded]
+    interventions: InterventionReport
+    skills_to_review: list[SkillToReview] = Field(default_factory=list)
+

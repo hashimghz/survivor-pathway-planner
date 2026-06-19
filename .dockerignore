@@ -1,13 +1,26 @@
-.env
 .venv/
 __pycache__/
 *.pyc
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
 .git/
-.github/
-node_modules/
-.next/
-db/*.db
-db/*.sqlite
-tests/
-*.md
-!README.md
+.gitignore
+*.sqlite
+.env
+.env.local
+.vscode/
+.idea/
+.DS_Store
+
+# Stale duplicates from the original bundle
+app_Home.py
+app_style.css
+candidate_card.py
+
+# Project artifacts not for submission
+*.zip
+*.png
+profile_schema.txt
+proposal.md
+five_layer_pipeline_data_flow.png
