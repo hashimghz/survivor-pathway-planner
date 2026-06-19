@@ -16,6 +16,7 @@ from __future__ import annotations
 # Top-of-page chrome
 APP_TITLE = "Pathway planner"
 ACTIVE_PROFILE_LABEL = "Active:"
+ACTIVE_PROFILE_NO_NAME = "Unnamed profile"
 NO_PROFILE_LABEL = "No profile loaded"
 EXIT_PROFILE_BUTTON = "Exit profile"
 

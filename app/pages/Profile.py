@@ -462,7 +462,12 @@ def main() -> None:
             ticket = profile_to_ticket(profile, pepper)
             st.session_state["active_profile_id"] = profile_id
             st.session_state["active_ticket"] = ticket
-            st.session_state["active_name"] = profile.identity.preferred_name
+            # Fall back to legal name when preferred name is left blank,
+            # rather than the header showing a placeholder for a profile
+            # that does have a real name on file, just not in that field.
+            st.session_state["active_name"] = (
+                profile.identity.preferred_name or profile.identity.legal_name
+            )
             st.session_state["is_sample_profile"] = False
             st.session_state.pop("pipeline_result", None)
             st.switch_page("Home.py")

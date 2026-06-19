@@ -104,21 +104,43 @@ class ProfileRepository:
             conn.commit()
 
     def list_summaries(self) -> list[dict]:
+        """One summary row per saved profile.
+
+        `preferred_name_plain` is deliberately unencrypted (unlike
+        `legal_name`, which only ever lives inside `encrypted_identity`).
+        When a caseworker left "Preferred name" blank on the form, that
+        column is empty — rather than showing a blank name, this falls
+        back to `legal_name` *only at display time*, decrypting just that
+        one row. The fallback is never written back to
+        `preferred_name_plain`; a real legal name should never end up
+        sitting in plaintext on disk just because a different field was
+        left blank.
+        """
         with sqlite3.connect(self._db_path) as conn:
             conn.row_factory = sqlite3.Row
             rows = conn.execute(
                 """
-                SELECT id, preferred_name_plain, current_metro
+                SELECT id, preferred_name_plain, current_metro, encrypted_identity
                 FROM profiles
                 ORDER BY id
                 """
             ).fetchall()
 
-        return [
-            {
-                "id": row["id"],
-                "preferred_name": row["preferred_name_plain"],
-                "current_metro": row["current_metro"],
-            }
-            for row in rows
-        ]
+        summaries: list[dict] = []
+        for row in rows:
+            display_name = row["preferred_name_plain"]
+            if not display_name:
+                identity = Identity.model_validate_json(
+                    decrypt_pii(row["encrypted_identity"], self._aes_key)
+                )
+                display_name = identity.legal_name
+
+            summaries.append(
+                {
+                    "id": row["id"],
+                    "preferred_name": display_name,
+                    "current_metro": row["current_metro"],
+                }
+            )
+
+        return summaries
