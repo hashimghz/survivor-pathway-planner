@@ -141,6 +141,17 @@ def _parse_disabilities(raw: str) -> list[str]:
     return [part.strip() for part in raw.split(",") if part.strip()]
 
 
+def _parse_list(raw: str) -> list[str]:
+    """Split free text on commas or newlines into a clean list of strings.
+
+    Mirrors how existing_skills is parsed, so the "Other" industry fields
+    behave the same way as the skills text area.
+    """
+    if not raw.strip():
+        return []
+    return [part.strip() for part in re.split(r"[\n,]", raw) if part.strip()]
+
+
 def _render_footer() -> None:
     st.markdown(
         f'<p style="text-align: center; color: var(--slate-light); '
@@ -170,8 +181,38 @@ def main() -> None:
     if "lang_row_count" not in st.session_state:
         st.session_state["lang_row_count"] = 1
 
+    # Languages live outside the form so the "Add language" button can add a
+    # row without submitting the whole form (Streamlit disallows ordinary
+    # buttons inside st.form). Keeping the button directly beneath the rows it
+    # affects is the point of pulling this block out here.
+    _section(copy.PROFILE_SECTION_LANGUAGES)
+    languages: list[Language] = []
+    for i in range(st.session_state["lang_row_count"]):
+        st.markdown(
+            f'<p class="pp-label">{copy.PROFILE_LANGUAGE_HEADING.format(n=i + 1)}</p>',
+            unsafe_allow_html=True,
+        )
+        col_code, col_fluency = st.columns(2)
+        with col_code:
+            code = st.text_input(
+                copy.PROFILE_FIELD_LABELS["language_code"],
+                key=f"lang_code_{i}",
+            )
+        with col_fluency:
+            fluency = st.slider(
+                copy.PROFILE_FIELD_LABELS["fluency_1_to_5"],
+                min_value=1,
+                max_value=5,
+                value=3,
+                key=f"lang_fluency_{i}",
+            )
+        if code.strip():
+            languages.append(Language(code=code.strip(), fluency_1_to_5=fluency))
+
     if st.button(copy.PROFILE_ADD_LANGUAGE):
         st.session_state["lang_row_count"] += 1
+        st.rerun()
+    _section_end()
 
     with st.form("new_profile", clear_on_submit=False):
         # 1. Identity
@@ -198,29 +239,6 @@ def main() -> None:
 
         # 2. Demographics
         _section(copy.PROFILE_SECTION_DEMOGRAPHICS)
-        languages: list[Language] = []
-        for i in range(st.session_state["lang_row_count"]):
-            st.markdown(
-                f'<p class="pp-label">{copy.PROFILE_LANGUAGE_HEADING.format(n=i + 1)}</p>',
-                unsafe_allow_html=True,
-            )
-            col_code, col_fluency = st.columns(2)
-            with col_code:
-                code = st.text_input(
-                    copy.PROFILE_FIELD_LABELS["language_code"],
-                    key=f"lang_code_{i}",
-                )
-            with col_fluency:
-                fluency = st.slider(
-                    copy.PROFILE_FIELD_LABELS["fluency_1_to_5"],
-                    min_value=1,
-                    max_value=5,
-                    value=3,
-                    key=f"lang_fluency_{i}",
-                )
-            if code.strip():
-                languages.append(Language(code=code.strip(), fluency_1_to_5=fluency))
-
         current_metro = st.text_input(copy.PROFILE_FIELD_LABELS["current_metro"])
         education_highest = _enum_selectbox(
             copy.PROFILE_FIELD_LABELS["education_highest"],
@@ -280,6 +298,17 @@ def main() -> None:
             )
         with col_evening:
             shift_evening = st.checkbox(copy.PROFILE_FIELD_LABELS["shift_evening"])
+
+        exclusion_industries = _enum_multiselect(
+            copy.PROFILE_EXCLUSION_INDUSTRIES_LABEL,
+            Industry,
+            copy.PROFILE_INDUSTRY_LABELS,
+            key="exclusion_industries",
+        )
+        exclusion_industries_other_raw = st.text_input(
+            copy.PROFILE_EXCLUSION_INDUSTRIES_OTHER_LABEL,
+            key="exclusion_industries_other",
+        )
         _section_end()
 
         # 4. Graded constraints
@@ -376,6 +405,10 @@ def main() -> None:
             copy.PROFILE_INDUSTRY_LABELS,
             key="industries_of_interest",
         )
+        industries_of_interest_other_raw = st.text_input(
+            copy.PROFILE_INDUSTRIES_INTEREST_OTHER_LABEL,
+            key="industries_of_interest_other",
+        )
         training_appetite = _enum_selectbox(
             copy.PROFILE_FIELD_LABELS["training_appetite"],
             TrainingAppetite,
@@ -421,7 +454,8 @@ def main() -> None:
                 skills=[],
                 existing_skills=existing_skills,
                 exclusion_zones=[],
-                exclusion_industries=[],
+                exclusion_industries=exclusion_industries,
+                exclusion_industries_other=_parse_list(exclusion_industries_other_raw),
                 exclusion_employers=[],
                 documentation_blockers=DocumentationBlockers(
                     requires_clean_record=requires_clean_record,
@@ -449,6 +483,7 @@ def main() -> None:
                     passport=passport,
                 ),
                 industries_of_interest=industries_of_interest,
+                industries_of_interest_other=_parse_list(industries_of_interest_other_raw),
                 wage_minimum_hourly=Decimal(str(wage_minimum_hourly)),
                 training_appetite=training_appetite,
                 long_term_goal=long_term_goal,

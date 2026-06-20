@@ -38,8 +38,19 @@ class SafeContactMethod(str, Enum):
 
 
 class Industry(str, Enum):
-    """Used for both exclusion_industries and industries_of_interest."""
+    """Used for both exclusion_industries and industries_of_interest.
 
+    The first eight values are the original set. The next seventeen round out
+    both the "avoid" side (labor-trafficking-risk venue types drawn from the
+    Polaris National Survivor Study typology, the same source used for the
+    vacatur feature) and the "interest" side (mainstream destination sectors).
+
+    `OTHER` is a sentinel, not a real industry: when selected it pairs with a
+    free-text field (`*_other` on Profile/Ticket) rather than forcing the enum
+    to be open-ended. It is never inferred from an occupation code.
+    """
+
+    # Original eight.
     HOSPITALITY = "hospitality"
     TRANSPORTATION = "transportation"
     AGRICULTURE = "agriculture"
@@ -48,6 +59,29 @@ class Industry(str, Enum):
     MASSAGE_PARLOR = "massage_parlor"
     RESTAURANT_BACK_OF_HOUSE = "restaurant_back_of_house"
     RETAIL_OVERNIGHT = "retail_overnight"
+
+    # Seventeen additions.
+    RESTAURANT_FRONT_OF_HOUSE = "restaurant_front_of_house"
+    RETAIL_DAYTIME = "retail_daytime"
+    HEALTHCARE_SUPPORT = "healthcare_support"
+    CHILDCARE = "childcare"
+    CONSTRUCTION = "construction"
+    LANDSCAPING_GROUNDSKEEPING = "landscaping_groundskeeping"
+    PEDDLING_DOOR_TO_DOOR_SALES = "peddling_door_to_door_sales"
+    CARNIVAL_TRAVELING_ENTERTAINMENT = "carnival_traveling_entertainment"
+    BEGGING_PANHANDLING = "begging_panhandling"
+    WAREHOUSING_LOGISTICS = "warehousing_logistics"
+    MANUFACTURING = "manufacturing"
+    JANITORIAL_CUSTODIAL = "janitorial_custodial"
+    SECURITY_SERVICES = "security_services"
+    OFFICE_ADMINISTRATIVE = "office_administrative"
+    CALL_CENTER_CUSTOMER_SERVICE = "call_center_customer_service"
+    PERSONAL_CARE_AIDE = "personal_care_aide"
+    NIGHTLIFE_ENTERTAINMENT = "nightlife_entertainment"
+
+    # Sentinel — pairs with a free-text field (see Profile/Ticket *_other);
+    # never inferred from an occupation code.
+    OTHER = "other"
 
 
 class GradedLevel(str, Enum):
@@ -254,6 +288,10 @@ class Profile(BaseModel):
 
     exclusion_zones: list[ExclusionZone] = Field(default_factory=list)
     exclusion_industries: list[Industry] = Field(default_factory=list)
+    # Free-text industries to avoid, used when Industry.OTHER is selected.
+    # Parsed like existing_skills (split on commas/newlines). Informational:
+    # there is no SOC code to veto on, so the engine does not filter on these.
+    exclusion_industries_other: list[str] = Field(default_factory=list)
     exclusion_employers: list[str] = Field(default_factory=list)
 
     documentation_blockers: DocumentationBlockers
@@ -266,6 +304,8 @@ class Profile(BaseModel):
     documents_held: DocumentsHeld
 
     industries_of_interest: list[Industry] = Field(default_factory=list)
+    # Free-text industries of interest, used when Industry.OTHER is selected.
+    industries_of_interest_other: list[str] = Field(default_factory=list)
     wage_minimum_hourly: HourlyWage
     training_appetite: TrainingAppetite
     long_term_goal: str = ""
@@ -312,6 +352,9 @@ class Ticket(BaseModel):
 
     exclusion_zones: list[ExclusionZone]
     exclusion_industries: list[Industry]
+    # Free-text companions to the Industry.OTHER sentinel (see Profile). The
+    # veto cannot act on free text — these carry through for context only.
+    exclusion_industries_other: list[str] = Field(default_factory=list)
     exclusion_employers: list[str]
 
     documentation_blockers: DocumentationBlockers
@@ -324,6 +367,7 @@ class Ticket(BaseModel):
     documents_held: DocumentsHeld
 
     industries_of_interest: list[Industry]
+    industries_of_interest_other: list[str] = Field(default_factory=list)
     wage_minimum_hourly: HourlyWage
     training_appetite: TrainingAppetite
     long_term_goal: str = ""
