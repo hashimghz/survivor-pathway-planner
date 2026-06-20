@@ -4,6 +4,10 @@ Primary action is "New profile" (the real intake flow). A secondary,
 clearly-labeled sample-profile picker lets anyone see the engine working at a
 glance without filling out the form — it is explicitly not the product's
 identity, just a shortcut for viewing.
+
+When real saved profiles exist in the repository, they are listed above the
+new-profile / sample-profile block so the caseworker can reload a previous
+session in one click.
 """
 
 from __future__ import annotations
@@ -11,6 +15,7 @@ from __future__ import annotations
 import streamlit as st
 
 from app import copy
+from app.components import saved_profiles_list
 from fixtures.demo_profiles import DEMO_PROFILES
 
 
@@ -26,6 +31,15 @@ def render() -> None:
 
     _, center, _ = st.columns([1, 2, 1])
     with center:
+        # Saved profiles list — shown only when real profiles exist in the DB.
+        has_saved = saved_profiles_list.render()
+
+        if has_saved:
+            st.markdown(
+                '<hr style="margin: 20px 0; border-color: var(--slate-light);">',
+                unsafe_allow_html=True,
+            )
+
         if st.button(copy.EMPTY_BUTTON_NEW, type="primary", use_container_width=True):
             st.switch_page("pages/Profile.py")
 
@@ -55,15 +69,6 @@ def _load_sample(key: str) -> None:
             st.session_state["active_ticket"] = ticket
             st.session_state["active_name"] = name
             st.session_state["is_sample_profile"] = True
-            # A sample isn't backed by a DB row — clear any stale id left
-            # over from a previously-loaded real profile, so Save can't
-            # accidentally write onto the wrong profile.
             st.session_state.pop("active_profile_id", None)
-            # Deliberately NOT clearing pipeline_result / pipeline_result_
-            # ticket_id here. Sample tickets have fixed ids (e.g.
-            # "demo-baseline"), so reloading the same sample after Exit
-            # should hit Home.py's existing ticket_id cache check and
-            # redisplay instantly, not re-run L4. Popping it here
-            # unconditionally defeated that on every reload, even of the
-            # same sample.
             return
+

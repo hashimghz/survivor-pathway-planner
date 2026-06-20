@@ -57,9 +57,17 @@ class ProfileRepository:
 
         return profile_id
 
-
     def update(self, profile_id: str, profile: Profile) -> None:
-        """Overwrite an existing profile in place. Raises KeyError if not found."""
+        """Overwrite an existing profile's intake answers in place.
+
+        Rewrites both encrypted_identity and non_pii_json so every field
+        the caseworker changed is persisted. saved_candidate_codes must be
+        carried forward by the caller — this method writes whatever is on
+        profile.saved_candidate_codes, so passing a Profile with an empty
+        list would silently wipe saved candidates.
+
+        Raises KeyError if profile_id doesn't exist.
+        """
         with sqlite3.connect(self._db_path) as conn:
             conn.row_factory = sqlite3.Row
             row = conn.execute(

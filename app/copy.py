@@ -100,6 +100,10 @@ EMPTY_BODY = (
 )
 EMPTY_BUTTON_LOAD = "Load profile"
 EMPTY_BUTTON_NEW = "New profile"
+# Saved profiles list
+SAVED_PROFILES_HEADING = "Saved profiles"
+SAVED_PROFILES_LOAD = "Load"
+SAVED_PROFILES_EDIT = "Edit"
 
 # Sample profile picker (demo/at-a-glance only — not the primary intake flow)
 EMPTY_SAMPLE_HEADING = "Or view a sample profile"
