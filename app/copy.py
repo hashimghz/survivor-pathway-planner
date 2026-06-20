@@ -124,6 +124,7 @@ PROFILE_ADD_LANGUAGE = "Add language"
 PROFILE_LANGUAGE_HEADING = "Language {n}"
 
 PROFILE_SECTION_IDENTITY = "Identity"
+PROFILE_SECTION_LANGUAGES = "Languages"
 PROFILE_SECTION_DEMOGRAPHICS = "Demographics"
 PROFILE_SECTION_CONSTRAINTS = "Constraints"
 PROFILE_SECTION_GRADED = "Graded constraints"
@@ -236,7 +237,35 @@ PROFILE_INDUSTRY_LABELS = {
     "massage_parlor": "Massage parlor",
     "restaurant_back_of_house": "Restaurant (back of house)",
     "retail_overnight": "Retail (overnight)",
+    "restaurant_front_of_house": "Restaurant (front of house)",
+    "retail_daytime": "Retail (daytime)",
+    "healthcare_support": "Healthcare support",
+    "childcare": "Childcare",
+    "construction": "Construction",
+    "landscaping_groundskeeping": "Landscaping / groundskeeping",
+    "peddling_door_to_door_sales": "Peddling / door-to-door sales",
+    "carnival_traveling_entertainment": "Carnival / traveling entertainment",
+    "begging_panhandling": "Begging / panhandling",
+    "warehousing_logistics": "Warehousing / logistics",
+    "manufacturing": "Manufacturing",
+    "janitorial_custodial": "Janitorial / custodial",
+    "security_services": "Security services",
+    "office_administrative": "Office / administrative",
+    "call_center_customer_service": "Call center / customer service",
+    "personal_care_aide": "Personal care aide",
+    "nightlife_entertainment": "Nightlife / entertainment",
+    "other": "Other (specify below)",
 }
+
+# Industries-to-avoid multiselect + its free-text companion (Industry.OTHER).
+PROFILE_EXCLUSION_INDUSTRIES_LABEL = "Industries to avoid"
+PROFILE_EXCLUSION_INDUSTRIES_OTHER_LABEL = (
+    "Other industries to avoid (comma-separated) — used when \"Other\" is selected above"
+)
+# Industries-of-interest free-text companion (Industry.OTHER).
+PROFILE_INDUSTRIES_INTEREST_OTHER_LABEL = (
+    "Other industries of interest (comma-separated) — used when \"Other\" is selected above"
+)
 
 PROFILE_ENV_MISSING = (
     "Configuration incomplete. Set PATHWAY_AES_KEY and PATHWAY_HMAC_PEPPER "

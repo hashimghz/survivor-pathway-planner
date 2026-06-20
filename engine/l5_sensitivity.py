@@ -104,6 +104,10 @@ def compute(
     ]
 
     for industry in ticket.exclusion_industries:
+        # OTHER is a free-text sentinel, not a SOC-backed industry — nothing is
+        # ever excluded under it, so it would only emit a noisy "0 options" row.
+        if industry == Industry.OTHER:
+            continue
         entries.append(
             Intervention(
                 constraint=f"industry:{industry.value}",
