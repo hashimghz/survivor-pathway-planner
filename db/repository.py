@@ -57,6 +57,42 @@ class ProfileRepository:
 
         return profile_id
 
+
+    def update(self, profile_id: str, profile: Profile) -> None:
+        """Overwrite an existing profile in place. Raises KeyError if not found."""
+        with sqlite3.connect(self._db_path) as conn:
+            conn.row_factory = sqlite3.Row
+            row = conn.execute(
+                "SELECT id FROM profiles WHERE id = ?", (profile_id,)
+            ).fetchone()
+
+        if row is None:
+            raise KeyError(profile_id)
+
+        identity_json = profile.identity.model_dump_json()
+        encrypted_identity = encrypt_pii(identity_json, self._aes_key)
+        non_pii_json = profile.model_dump_json(exclude={"identity"})
+
+        with sqlite3.connect(self._db_path) as conn:
+            conn.execute(
+                """
+                UPDATE profiles
+                SET encrypted_identity = ?,
+                    non_pii_json       = ?,
+                    preferred_name_plain = ?,
+                    current_metro      = ?
+                WHERE id = ?
+                """,
+                (
+                    encrypted_identity,
+                    non_pii_json,
+                    profile.identity.preferred_name,
+                    profile.current_metro,
+                    profile_id,
+                ),
+            )
+            conn.commit()
+
     def get(self, profile_id: str) -> Profile:
         with sqlite3.connect(self._db_path) as conn:
             conn.row_factory = sqlite3.Row
