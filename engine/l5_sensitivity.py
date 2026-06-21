@@ -48,7 +48,7 @@ def _clean_record_hint(ticket: Ticket) -> str:
         return f"Vacatur pathway available: {pathway['statute']} — {pathway['next_step']}"
     if expungement_eligible:
         return "Record sealing or expungement may apply — verify with local legal aid."
-    return "Discuss documentation requirements with the survivor."
+    return "Discuss documentation requirements with the client."
 
 
 def _truly_unlocked(ticket: Ticket, candidates: list[Excluded], relax: dict) -> int:
@@ -156,7 +156,7 @@ def compute(
                 wage_candidates,
                 {"wage_minimum_hourly": Decimal("0")},
             ),
-            hint="Discuss wage floor flexibility with survivor",
+            hint="Discuss wage floor flexibility with client",
             actionable=True,
         ),
     ]

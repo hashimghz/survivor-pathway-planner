@@ -6,7 +6,7 @@ single page; no separate page reload between tabs.
 
 This is the engine's real entry point: `engine.pipeline.run(ticket)` is
 called directly below, no mock data. The primary way a ticket gets here is a
-caseworker submitting a real survivor through `app/pages/Profile.py`. When no
+caseworker submitting a real client through `app/pages/Profile.py`. When no
 profile is active, the empty state leads with that as the main action, plus
 an explicitly-labeled sample-profile shortcut (see
 `app/components/empty_state.py` and `fixtures/demo_profiles.py`) for viewing

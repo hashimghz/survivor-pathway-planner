@@ -83,7 +83,7 @@ def _build_profile_payload(ticket: Ticket) -> dict:
 
 def _build_candidate_payload(scored: ScoredOccupation, history: list[HistoryEntrySummary]) -> dict:
     """`history` is pre-filtered to this candidate's occupation_code by the
-    caller (see `explain()`) — passing the survivor's *entire* job_history
+    caller (see `explain()`) — passing the client's *entire* job_history
     into every one of the top-N LLM calls would mean repeating mostly
     irrelevant entries (records for other occupations) in every request,
     larger payloads for no benefit. Filtering once per candidate keeps each

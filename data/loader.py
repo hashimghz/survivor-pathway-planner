@@ -1,4 +1,4 @@
-"""Load survivor profiles and occupations from raw data files."""
+"""Load client profiles and occupations from raw data files."""
 
 from __future__ import annotations
 

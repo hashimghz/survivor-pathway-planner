@@ -64,7 +64,7 @@ def map_skills(
     """Map free-text skills to O*NET skill clusters.
 
     Args:
-        skill_texts: Free-text skill descriptions from the survivor profile.
+        skill_texts: Free-text skill descriptions from the client profile.
         top_k: Maximum matches to return per input skill.
         threshold: Minimum cosine similarity to include a match. Default 0.55
             is a starting value, tunable based on verification.
