@@ -218,7 +218,9 @@ def _render_actions(
                     type="secondary" if is_saved else "primary",
                     use_container_width=True,
                 ):
-                    db_access.toggle_saved_candidate(profile_id, occupation_code, is_saved)
+                    db_access.toggle_saved_candidate(
+                        profile_id, occupation_code, candidate.occupation.title, is_saved
+                    )
                     st.rerun()
 
     with col_details:

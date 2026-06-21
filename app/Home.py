@@ -32,6 +32,7 @@ from app.components import (
     empty_state,
     excluded_list,
     header,
+    history_view,
     interventions_list,
     sidebar,
     skills_interpreted,
@@ -109,16 +110,23 @@ def main() -> None:
     _render_exit_profile_button()
     skills_interpreted.render(ticket)
 
+    # Samples aren't backed by a DB row, so Save (and the History tab) have
+    # nothing to write to — profile_id stays None for them. Computed here,
+    # above the tabs, since both the Candidates tab (Save) and the History
+    # tab need it.
+    profile_id = None if is_sample else st.session_state.get("active_profile_id")
+
     left, right = st.columns([1, 4], gap="medium")
     with left:
         sidebar.render(ticket, name or "")
 
     with right:
-        tab_candidates, tab_excluded, tab_interventions = st.tabs(
+        tab_candidates, tab_excluded, tab_interventions, tab_history = st.tabs(
             [
                 f"{copy.TAB_CANDIDATES} ({len(result.candidates)})",
                 f"{copy.TAB_EXCLUDED} ({len(result.excluded)})",
                 f"{copy.TAB_INTERVENTIONS} ({len(result.interventions.entries)})",
+                copy.TAB_HISTORY,
             ]
         )
 
@@ -126,9 +134,6 @@ def main() -> None:
             if result.skills_to_review:
                 _render_review_banner(len(result.skills_to_review))
             income_trajectory.render(result.candidates)
-            # Samples aren't backed by a DB row, so Save has nothing to
-            # write to — profile_id stays None for them.
-            profile_id = None if is_sample else st.session_state.get("active_profile_id")
             for i, c in enumerate(result.candidates, start=1):
                 candidate_card.render(c, rank=i, profile_id=profile_id, default_expanded=(i == 1))
 
@@ -137,6 +142,9 @@ def main() -> None:
 
         with tab_interventions:
             interventions_list.render(result.interventions)
+
+        with tab_history:
+            history_view.render(profile_id)
 
     st.markdown(
         f'<p style="text-align: center; color: var(--slate-light); '

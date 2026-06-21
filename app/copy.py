@@ -24,6 +24,7 @@ EXIT_PROFILE_BUTTON = "Exit profile"
 TAB_CANDIDATES = "Candidates"
 TAB_EXCLUDED = "Excluded"
 TAB_INTERVENTIONS = "Interventions"
+TAB_HISTORY = "History"
 
 # Sidebar context card
 CONTEXT_HEADING = "CONTEXT"
@@ -71,6 +72,31 @@ INTERVENTIONS_HEADING_ACTIONABLE = "Actionable"
 INTERVENTIONS_HEADING_NOT_ACTIONABLE = "Safety-critical, not actionable"
 INTERVENTIONS_JOBS_SUFFIX = "options would open"
 
+# History tab (outcome tracking for saved candidates — see
+# next_phase_plan.md §3.6a; lives only on Home.py, never on the intake form)
+HISTORY_EMPTY = (
+    "No saved candidates yet. Use Save on a candidate in the Candidates tab "
+    "to start tracking its outcome here."
+)
+HISTORY_SAMPLE_DISABLED = (
+    "History tracking isn't available for sample profiles — submit a real "
+    "profile first."
+)
+HISTORY_CURRENT_STATUS_LABEL = "CURRENT STATUS"
+HISTORY_TIMELINE_LABEL = "Full history ({n})"
+HISTORY_STATUS_INPUT_LABEL = "New status"
+HISTORY_NOTES_LABEL = "Notes (optional)"
+HISTORY_RECORD_BUTTON = "Record"
+HISTORY_STATUS_LABELS = {
+    "saved": "Saved",
+    "applied": "Applied",
+    "interviewing": "Interviewing",
+    "offered": "Offered",
+    "accepted": "Accepted",
+    "rejected": "Rejected",
+    "withdrawn": "Withdrawn",
+}
+
 # Skills to review banner
 SKILLS_REVIEW_BANNER = "{n} skill needs your review"
 SKILLS_REVIEW_BANNER_PLURAL = "{n} skills need your review"
@@ -105,6 +131,12 @@ EMPTY_BUTTON_NEW = "New profile"
 SAVED_PROFILES_HEADING = "Saved profiles"
 SAVED_PROFILES_LOAD = "Load"
 SAVED_PROFILES_EDIT = "Edit"
+SAVED_PROFILES_DATE_UNKNOWN = "—"
+SAVED_PROFILES_STATUS_NONE = "No history yet"
+SAVED_PROFILES_DELETE = "Delete"
+SAVED_PROFILES_DELETE_CONFIRM_PROMPT = "Permanently delete this profile and its history? This can't be undone."
+SAVED_PROFILES_DELETE_CONFIRM_BUTTON = "Yes, delete permanently"
+SAVED_PROFILES_DELETE_CANCEL = "Cancel"
 
 # Sample profile picker (demo/at-a-glance only — not the primary intake flow)
 EMPTY_SAMPLE_HEADING = "Or view a sample profile"
