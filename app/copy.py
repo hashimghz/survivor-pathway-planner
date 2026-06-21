@@ -64,6 +64,7 @@ EXCLUSION_RULE_LABELS = {
     "work_authorization": "Work authorization required",
     "criminal_record":    "Criminal-record requirement",
     "wage_floor":         "Below wage floor",
+    "insufficient_data":  "Insufficient data to score",
 }
 
 # Interventions panel
