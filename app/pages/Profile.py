@@ -1,4 +1,4 @@
-"""New survivor profile entry form."""
+"""New client profile entry form."""
 
 from __future__ import annotations
 

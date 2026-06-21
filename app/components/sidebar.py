@@ -1,6 +1,6 @@
 """Sidebar context cards.
 
-Renders the survivor's identity summary, key constraint values, and the
+Renders the client's identity summary, key constraint values, and the
 trigger / avoid graded constraints. Reads from a Ticket (not Profile) — the
 sidebar shows what the engine knows, which is the anonymous payload, not PII.
 """
@@ -24,7 +24,7 @@ _GRADED_LABELS = {
 
 
 def render(ticket: Ticket, display_name: str) -> None:
-    """Render the sidebar context for the active survivor."""
+    """Render the sidebar context for the active client."""
 
     work_auth = _humanise_work_auth(ticket.work_authorization.value)
     vehicle = "Yes" if ticket.has_vehicle else "No"

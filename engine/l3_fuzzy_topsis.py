@@ -1,7 +1,7 @@
 """Fuzzy MCDA scoring for occupation candidates.
 
 For each surviving occupation, computes a per-criterion fit score in [0, 1] by
-mapping the survivor's graded preferences (trigger / avoid / ok) onto the
+mapping the client's graded preferences (trigger / avoid / ok) onto the
 occupation's work-context ratings via triangular tolerance bands, then
 aggregates the ten criterion scores into one fit score using a TOPSIS
 distance-to-ideal formula with domain-tuned weights.
@@ -13,19 +13,19 @@ public Candidate.
 Algorithm summary
 -----------------
 1. Per-criterion fit (10 dimensions, each in [0, 1]):
-   - Six "graded" criteria map survivor preference to a tolerance band; an
+   - Six "graded" criteria map client preference to a tolerance band; an
      occupation attribute above the band penalises fit linearly. The penalty
      slope is steeper for ``trigger`` than for ``avoid``.
-   - skill_match: level-weighted overlap of survivor skills with occupation
+   - skill_match: level-weighted overlap of client skills with occupation
      skills.
    - wage_fit: the fraction of an occupation's BLS wage range expected to
-     clear the survivor's hourly floor, approximating wage_pct10-to-pct90 as
+     clear the client's hourly floor, approximating wage_pct10-to-pct90 as
      a uniform distribution.
    - commute_fit: stub — the data layer does not currently carry occupation
      location, so this returns 1.0 across the board. Wire up once posting
      locations land.
    - history_fit (next_phase_plan.md §3.6b): mild, uniform deprioritization
-     for any occupation the survivor has a job_history entry for, regardless
+     for any occupation the client has a job_history entry for, regardless
      of outcome. Soft signal only — never a hard exclusion (that's a
      deliberate v1 simplification, flagged for revisit later).
 
@@ -47,7 +47,7 @@ from models import CriteriaBreakdown, GradedLevel, Occupation, Ticket
 
 # ---------------------------------------------------------------------------
 # Weights — sum to 1.0. Skewed toward skill_match, wage_fit, and isolation
-# because those carry the strongest survivor-safety and economic signal.
+# because those carry the strongest client-safety and economic signal.
 # Move to engine/config/topsis_weights.yaml once tuning matters.
 #
 # `history_fit` (next_phase_plan.md §3.6b) is computed as a proportional
@@ -109,7 +109,7 @@ class ScoredOccupation:
 # ---------------------------------------------------------------------------
 
 def _exposure_fit(pref: GradedLevel, exposure: float) -> float:
-    """Score in [0, 1] from the survivor's preference and the occupation's exposure.
+    """Score in [0, 1] from the client's preference and the occupation's exposure.
 
     Within tolerance, full fit (1.0). Above tolerance, linear decay to 0.0 by
     the time exposure hits 1.0. Tighter tolerance (trigger) ⇒ steeper decay.
@@ -133,10 +133,10 @@ def _normalize_rating(value: float | None, lo: float = 1.0, hi: float = 5.0) -> 
 # ---------------------------------------------------------------------------
 
 def _skill_match(ticket: Ticket, occupation: Occupation) -> float:
-    """Skill overlap between the survivor's skills and the occupation's required skills.
+    """Skill overlap between the client's skills and the occupation's required skills.
 
     When L1 mapped_skills are available (from free-text input), computes a
-    confidence-weighted Jaccard overlap between the survivor's mapped O*NET
+    confidence-weighted Jaccard overlap between the client's mapped O*NET
     skill IDs and the occupation's skill IDs.
 
     Falls back to the original level-weighted overlap when mapped_skills is
@@ -151,40 +151,40 @@ def _skill_match(ticket: Ticket, occupation: Occupation) -> float:
     if ticket.mapped_skills:
         # Build {onet_id: best_confidence} from L1 output, taking the top
         # match per input skill to avoid double-counting.
-        survivor_weights: dict[str, float] = {}
+        client_weights: dict[str, float] = {}
         for entry in ticket.mapped_skills:
             for match in entry.get("matches", []):
                 sid = match["onet_id"]
                 conf = match["confidence"]
-                if sid not in survivor_weights or conf > survivor_weights[sid]:
-                    survivor_weights[sid] = conf
+                if sid not in client_weights or conf > client_weights[sid]:
+                    client_weights[sid] = conf
 
-        if not survivor_weights:
+        if not client_weights:
             return 0.3  # L1 ran but found no matches — weak signal
 
-        survivor_ids = set(survivor_weights.keys())
-        intersection = survivor_ids & occ_skill_ids
-        union = survivor_ids | occ_skill_ids
+        client_ids = set(client_weights.keys())
+        intersection = client_ids & occ_skill_ids
+        union = client_ids | occ_skill_ids
 
         if not union:
             return 0.5
 
         # Weighted Jaccard: sum of confidences for intersecting skills
         # divided by total confidence across the union.
-        weighted_inter = sum(survivor_weights.get(sid, 0.5) for sid in intersection)
-        weighted_union = sum(survivor_weights.get(sid, 0.5) for sid in union)
+        weighted_inter = sum(client_weights.get(sid, 0.5) for sid in intersection)
+        weighted_union = sum(client_weights.get(sid, 0.5) for sid in union)
 
         return min(1.0, weighted_inter / weighted_union) if weighted_union > 0 else 0.5
 
     # Legacy path: structured Skill objects with level_1_to_5
-    survivor_levels = {s.skill_id: s.level_1_to_5 for s in ticket.skills}
-    matched_levels = sum(survivor_levels.get(sid, 0) for sid in occ_skill_ids)
+    client_levels = {s.skill_id: s.level_1_to_5 for s in ticket.skills}
+    matched_levels = sum(client_levels.get(sid, 0) for sid in occ_skill_ids)
     max_possible = 5.0 * len(occ_skill_ids)
     return min(1.0, matched_levels / max_possible)
 
 
 def _wage_fit(ticket: Ticket, occupation: Occupation) -> float:
-    """Fraction of an occupation's wage range expected to clear the survivor's floor."""
+    """Fraction of an occupation's wage range expected to clear the client's floor."""
     floor = float(ticket.wage_minimum_hourly)
     p10 = float(occupation.wage_pct10_annual) / 2080 if occupation.wage_pct10_annual else None
     p50 = float(occupation.median_wage_hourly) if occupation.median_wage_hourly else None
@@ -221,7 +221,7 @@ def _night_shift_proxy(ticket: Ticket, occupation: Occupation) -> float:
 
 
 def _shift_fit(ticket: Ticket, occupation: Occupation) -> float:
-    """How well the survivor's available shifts cover an irregular schedule."""
+    """How well the client's available shifts cover an irregular schedule."""
     shifts = ticket.available_shifts
     available = sum([shifts.morning, shifts.afternoon, shifts.evening])
     if available == 0:

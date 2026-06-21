@@ -6,7 +6,7 @@ constraints (stress test). They exist so anyone can see the engine working
 without filling out the intake form first.
 
 They are NOT the product's primary flow. The primary flow is a caseworker
-submitting a real survivor through `app/pages/Profile.py`. The UI must always
+submitting a real client through `app/pages/Profile.py`. The UI must always
 make clear when one of these is loaded (see `is_sample` flag usage in
 app/Home.py) so it's never mistaken for a real intake.
 

@@ -1,4 +1,4 @@
-"""Synthetic survivor profiles for tests and golden fixtures."""
+"""Synthetic client profiles for tests and golden fixtures."""
 
 from __future__ import annotations
 

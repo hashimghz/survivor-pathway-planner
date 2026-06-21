@@ -200,7 +200,7 @@ class ExclusionZone(BaseModel):
 
 
 class DocumentationBlockers(BaseModel):
-    """Job-side requirements that may exclude the survivor.
+    """Job-side requirements that may exclude the client.
 
     These are the requirements typical postings impose. The veto step checks
     them against `documents_held` and `legal_profile`.
@@ -245,7 +245,7 @@ class LegalProfile(BaseModel):
 
 
 class DocumentsHeld(BaseModel):
-    """What the survivor has on hand."""
+    """What the client has on hand."""
 
     state_id: bool
     drivers_license: bool
@@ -261,7 +261,7 @@ class DocumentsHeld(BaseModel):
 
 
 class Profile(BaseModel):
-    """Full survivor record. PII (in `identity`) is encrypted at rest.
+    """Full client record. PII (in `identity`) is encrypted at rest.
 
     Never leaves db/ and core/. Pipeline operates on Ticket only.
     Matches the shape of the teammate's survivors.json exactly.
@@ -312,7 +312,7 @@ class Profile(BaseModel):
 
     # Caseworker curation of engine output. Never read by the engine and
     # never carried onto Ticket (see core/anonymizer.py's exclude set) —
-    # this is purely "which results did the caseworker flag," not survivor
+    # this is purely "which results did the caseworker flag," not client
     # intake data, so it has no business crossing into the pipeline.
     saved_candidate_codes: list[str] = Field(
         default_factory=list,
@@ -451,7 +451,7 @@ class Occupation(BaseModel):
 class CriteriaBreakdown(BaseModel):
     """Per-dimension fit scores in [0, 1]. The UI renders these as bars.
 
-    `history_fit` added for next_phase_plan.md §3.6b: 1.0 when the survivor
+    `history_fit` added for next_phase_plan.md §3.6b: 1.0 when the client
     has no job_history entry for this occupation, a lower score when they
     do (regardless of outcome — see engine/l3_fuzzy_topsis.py's
     `_history_fit`). Defaults to 1.0 ("no history") so existing call sites

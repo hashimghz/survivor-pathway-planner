@@ -121,7 +121,7 @@ CHART_TRAJECTORY_EMPTY = "No candidates to project an income trajectory for."
 # Empty state
 EMPTY_TITLE = "No profile loaded"
 EMPTY_BODY = (
-    "Load a survivor profile to see candidate occupations, what was filtered "
+    "Load a client profile to see candidate occupations, what was filtered "
     "out, and what could be unlocked with a single intervention."
 )
 EMPTY_BUTTON_LOAD = "Load profile"
@@ -142,7 +142,7 @@ SAVED_PROFILES_DELETE_CANCEL = "Cancel"
 EMPTY_SAMPLE_HEADING = "Or view a sample profile"
 EMPTY_SAMPLE_BODY = (
     "For seeing the engine work at a glance. Not a substitute for entering "
-    "a real survivor through New profile."
+    "a real client through New profile."
 )
 EMPTY_SAMPLE_SELECT_LABEL = "Sample profile"
 EMPTY_SAMPLE_BUTTON = "Load sample"
@@ -151,12 +151,12 @@ SAMPLE_TAG_LABEL = "SAMPLE DATA — NOT A REAL PROFILE"
 # Footer / accountability strip
 ACCOUNTABILITY = (
     "This tool surfaces options. The caseworker decides what to discuss "
-    "with the survivor and what to act on."
+    "with the client and what to act on."
 )
 
 # Profile entry form
-PROFILE_PAGE_TITLE = "New survivor profile"
-PROFILE_EDIT_TITLE = "Edit survivor profile"
+PROFILE_PAGE_TITLE = "New client profile"
+PROFILE_EDIT_TITLE = "Edit client profile"
 PROFILE_SUBMIT = "Save profile"
 PROFILE_SAVE_CHANGES = "Save changes"
 PROFILE_ADD_LANGUAGE = "Add language"
@@ -222,7 +222,7 @@ PROFILE_DOCUMENTATION_BLOCKERS_HEADING = "Documentation blockers"
 PROFILE_DOCUMENTS_HELD_HEADING = "Documents held"
 
 PROFILE_SKILLS_TEXT_LABEL = (
-    "Survivor's skills (one per line, or comma-separated). "
+    "Client's skills (one per line, or comma-separated). "
     "Free text is fine — the engine will match against O*NET clusters."
 )
 

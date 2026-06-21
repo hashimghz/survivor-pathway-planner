@@ -1,10 +1,10 @@
 # Pathway planner
 
-A decision-support tool for caseworkers supporting trafficking survivors. Matches survivors to occupations while respecting safety, legal, and economic constraints. The caseworker decides; this tool surfaces options.
+A decision-support tool for caseworkers supporting trafficking clients. Matches clients to occupations while respecting safety, legal, and economic constraints. The caseworker decides; this tool surfaces options.
 
 ## Background
 
-Trafficking survivors face compounding barriers when seeking economic stability: trauma-shaped constraints around work environment and schedule, legal complications (criminal records often acquired during exploitation), missing documentation, and wage requirements that low-wage retail can't meet. Existing job-matching tools optimize for placement metrics, not survivor agency.
+Trafficking clients face compounding barriers when seeking economic stability: trauma-shaped constraints around work environment and schedule, legal complications (criminal records often acquired during exploitation), missing documentation, and wage requirements that low-wage retail can't meet. Existing job-matching tools optimize for placement metrics, not client agency.
 
 This tool inverts that. It treats the caseworker as the decision-maker, surfaces ranked options with explicit safety and economic tradeoffs, and shows what specific interventions — vacatur filings, DMV pathways, T-visa applications — would unlock more options.
 
@@ -12,14 +12,14 @@ Built for the USAII Global AI Hackathon 2026, "AI for Systems & Society" track, 
 
 ## How it works
 
-Given an anonymized survivor profile, the system:
+Given an anonymized client profile, the system:
 
 1. **Filters** out occupations that violate hard constraints — excluded industries, missing documentation, criminal-record requirements, wage floor. Each exclusion records the named rule that cut it.
 2. **Scores** the surviving occupations on nine dimensions (skill match, wage fit, isolation, customer-facing intensity, schedule alignment, and more), using a fuzzy MCDA approach with TOPSIS distance-to-ideal aggregation.
 3. **Explains** the top candidates with Claude — generating fit prose, safe resume framings (respecting the caseworker's citability calls on each skill), and risk flags worth verifying before forwarding a posting.
 4. **Analyzes** what specific changes would unlock more options — separating actionable interventions from non-actionable safety exclusions.
 
-The UI presents results across three tabs: Candidates, Excluded, Interventions. The caseworker reads them and decides what to discuss with the survivor.
+The UI presents results across three tabs: Candidates, Excluded, Interventions. The caseworker reads them and decides what to discuss with the client.
 
 ## Architecture
 
@@ -70,7 +70,7 @@ The app loads with a demo profile (Daniela). She has `work_authorization=no`, so
 ## Design principles
 
 - **The caseworker decides.** Every string in the UI avoids "recommend," "best match," "you should." Instead: "candidate," "consider," "worth verifying." The caseworker is responsible for the recommendation; this tool is responsible for surfacing tradeoffs.
-- **No surveillance.** This is decision support, not behavioral tracking. The threat model treats the survivor as the person being protected.
+- **No surveillance.** This is decision support, not behavioral tracking. The threat model treats the client as the person being protected.
 - **PII stays encrypted.** Identity fields are encrypted at rest. The pipeline operates on anonymous tickets. The LLM never sees names.
 - **Excluded is honest.** Every filtered occupation appears in the Excluded tab with the named rule that cut it. No silent ranking-down.
 - **Interventions show leverage.** Where a single constraint change would unlock many options, and the change is something a caseworker can actually pursue, the Interventions tab names it.
@@ -78,7 +78,7 @@ The app loads with a demo profile (Daniela). She has `work_authorization=no`, so
 ## Data
 
 - **O*NET occupations** (988 SOC codes) enriched with BLS wage percentiles (p10, median, p90) and O*NET work-context ratings (contact_with_others, physical_proximity, violence_exposure, public_facing, schedule_irregularity).
-- **Synthetic survivor profiles** for development. No real survivor data is in this repo.
+- **Synthetic client profiles** for development. No real client data is in this repo.
 
 ## Status
 

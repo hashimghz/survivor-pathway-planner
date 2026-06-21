@@ -66,7 +66,7 @@ def _infer_industry(code: str) -> Industry | None:
     """
     # 33-9 (Security Guards, crossing guards, etc.) → security_services. The
     # rest of major group 33 (police, fire, corrections) is left unmapped: it
-    # isn't an "industry" a survivor would list, and blanketing it would be wrong.
+    # isn't an "industry" a client would list, and blanketing it would be wrong.
     if code.startswith("33-9"):
         return Industry.SECURITY_SERVICES
 

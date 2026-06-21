@@ -1,9 +1,9 @@
 """Criminal-record relief pathways: post-conviction vacatur for trafficking
-survivors.
+clients.
 
 Per the Polaris National Survivor Study, criminal records from coerced
 activity are the largest documented employment barrier for this population.
-Several states let survivors petition a court to vacate convictions for
+Several states let clients petition a court to vacate convictions for
 offenses committed as a direct result of being trafficked. This module is a
 keyed lookup from (jurisdiction, record categories) to those pathways.
 
@@ -25,9 +25,9 @@ from __future__ import annotations
 _PATHWAYS: dict[str, dict[str, str]] = {
     "FL": {
         "statute": "Fla. Stat. §943.0583",
-        "title": "Petition to vacate convictions for human trafficking survivors",
+        "title": "Petition to vacate convictions for human trafficking clients",
         "rationale": (
-            "Florida law lets survivors petition the court to vacate "
+            "Florida law lets clients petition the court to vacate "
             "convictions, arrests, and related records for offenses "
             "committed as a direct result of being a victim of human "
             "trafficking."
@@ -36,9 +36,9 @@ _PATHWAYS: dict[str, dict[str, str]] = {
     },
     "NY": {
         "statute": "N.Y. Crim. Proc. Law §440.10(1)(i)",
-        "title": "Motion to vacate judgment for trafficking survivors",
+        "title": "Motion to vacate judgment for trafficking clients",
         "rationale": (
-            "New York law lets survivors move to vacate a judgment for an "
+            "New York law lets clients move to vacate a judgment for an "
             "offense where participation was a result of having been a "
             "victim of trafficking."
         ),
@@ -46,9 +46,9 @@ _PATHWAYS: dict[str, dict[str, str]] = {
     },
     "CA": {
         "statute": "Cal. Penal Code §236.14",
-        "title": "Petition for vacatur of convictions for trafficking survivors",
+        "title": "Petition for vacatur of convictions for trafficking clients",
         "rationale": (
-            "California law lets survivors petition to vacate a "
+            "California law lets clients petition to vacate a "
             "nonviolent-offense conviction or arrest that was a direct "
             "result of being a victim of human trafficking."
         ),
@@ -73,8 +73,8 @@ def applicable_pathways(
     Each dict in the returned list:
         {
             "statute": "FL §943.0583",
-            "title": "Petition to vacate convictions for human trafficking survivors",
-            "rationale": "Florida law lets survivors petition...",
+            "title": "Petition to vacate convictions for human trafficking clients",
+            "rationale": "Florida law lets clients petition...",
             "next_step": "Refer to a local legal aid organization for petition preparation.",
         }
     """
