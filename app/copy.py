@@ -101,6 +101,11 @@ EMPTY_BODY = (
 EMPTY_BUTTON_LOAD = "Load profile"
 EMPTY_BUTTON_NEW = "New profile"
 
+# Saved profiles list
+SAVED_PROFILES_HEADING = "Saved profiles"
+SAVED_PROFILES_LOAD = "Load"
+SAVED_PROFILES_EDIT = "Edit"
+
 # Sample profile picker (demo/at-a-glance only — not the primary intake flow)
 EMPTY_SAMPLE_HEADING = "Or view a sample profile"
 EMPTY_SAMPLE_BODY = (
@@ -119,7 +124,9 @@ ACCOUNTABILITY = (
 
 # Profile entry form
 PROFILE_PAGE_TITLE = "New survivor profile"
+PROFILE_EDIT_TITLE = "Edit survivor profile"
 PROFILE_SUBMIT = "Save profile"
+PROFILE_SAVE_CHANGES = "Save changes"
 PROFILE_ADD_LANGUAGE = "Add language"
 PROFILE_LANGUAGE_HEADING = "Language {n}"
 
