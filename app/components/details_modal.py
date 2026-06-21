@@ -177,7 +177,9 @@ def render(candidate: Candidate, profile_id: str | None = None) -> None:
             key=f"modal_save_{occupation_code}",
             type="secondary" if is_saved else "primary",
         ):
-            db_access.toggle_saved_candidate(profile_id, occupation_code, is_saved)
+            db_access.toggle_saved_candidate(
+                profile_id, occupation_code, candidate.occupation.title, is_saved
+            )
             st.rerun()
 
     _body()

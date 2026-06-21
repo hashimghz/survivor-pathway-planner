@@ -15,9 +15,19 @@ CREATE TABLE IF NOT EXISTS profiles (
     encrypted_identity BLOB NOT NULL,
     non_pii_json TEXT NOT NULL,
     preferred_name_plain TEXT NOT NULL,
-    current_metro TEXT NOT NULL
+    current_metro TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT ''
 );
 """
+
+# Migration for databases created before `created_at` existed on the table
+# above. SQLite has no "ADD COLUMN IF NOT EXISTS"; running this against a
+# table that already has the column raises OperationalError, which __init__
+# catches and ignores — so this is safe to run unconditionally on every
+# startup, on both old and new databases.
+_ADD_CREATED_AT_COLUMN_SQL = (
+    "ALTER TABLE profiles ADD COLUMN created_at TEXT NOT NULL DEFAULT ''"
+)
 
 _CREATE_HISTORY_TABLE_SQL = """
 CREATE TABLE IF NOT EXISTS job_history (
@@ -52,15 +62,22 @@ class ProfileRepository:
         self._aes_key = aes_key
         with sqlite3.connect(self._db_path) as conn:
             conn.execute(_CREATE_TABLE_SQL)
+            try:
+                conn.execute(_ADD_CREATED_AT_COLUMN_SQL)
+            except sqlite3.OperationalError:
+                pass  # column already exists — table predates this migration
             # executescript handles multiple statements (the index + table).
             conn.executescript(_CREATE_HISTORY_TABLE_SQL)
             conn.commit()
 
     def save(self, profile: Profile) -> str:
+        import datetime
+
         profile_id = str(uuid.uuid4())
         identity_json = profile.identity.model_dump_json()
         encrypted_identity = encrypt_pii(identity_json, self._aes_key)
         non_pii_json = profile.model_dump_json(exclude={"identity"})
+        created_at = datetime.datetime.utcnow().isoformat() + "Z"
 
         with sqlite3.connect(self._db_path) as conn:
             conn.execute(
@@ -70,8 +87,9 @@ class ProfileRepository:
                     encrypted_identity,
                     non_pii_json,
                     preferred_name_plain,
-                    current_metro
-                ) VALUES (?, ?, ?, ?, ?)
+                    current_metro,
+                    created_at
+                ) VALUES (?, ?, ?, ?, ?, ?)
                 """,
                 (
                     profile_id,
@@ -79,6 +97,7 @@ class ProfileRepository:
                     non_pii_json,
                     profile.identity.preferred_name,
                     profile.current_metro,
+                    created_at,
                 ),
             )
             conn.commit()
@@ -187,16 +206,42 @@ class ProfileRepository:
         `preferred_name_plain`; a real legal name should never end up
         sitting in plaintext on disk just because a different field was
         left blank.
+
+        `created_at` may be '' for rows saved before that column existed
+        (see `_ADD_CREATED_AT_COLUMN_SQL`) — callers should treat an empty
+        string as "unknown", not attempt to parse it as a date.
+
+        `current_status` is the most recent `job_history` status for this
+        profile (across every occupation, not per-occupation — this is a
+        one-line summary, not the full breakdown the History tab shows), or
+        `None` if no history has been recorded yet.
         """
         with sqlite3.connect(self._db_path) as conn:
             conn.row_factory = sqlite3.Row
             rows = conn.execute(
                 """
-                SELECT id, preferred_name_plain, current_metro, encrypted_identity
+                SELECT id, preferred_name_plain, current_metro, encrypted_identity, created_at
                 FROM profiles
-                ORDER BY id
+                ORDER BY created_at DESC, id
                 """
             ).fetchall()
+
+            # SQLite quirk (documented, not incidental): when a query has
+            # exactly one MIN()/MAX() aggregate and no other aggregates, the
+            # other selected columns come from the same row that produced
+            # the MIN/MAX — so `status` here is reliably the status of each
+            # profile's single most-recently-recorded history entry.
+            latest_status_rows = conn.execute(
+                """
+                SELECT profile_id, status, MAX(recorded_at) AS latest_at
+                FROM job_history
+                GROUP BY profile_id
+                """
+            ).fetchall()
+
+        latest_status_by_profile = {
+            row["profile_id"]: row["status"] for row in latest_status_rows
+        }
 
         summaries: list[dict] = []
         for row in rows:
@@ -212,10 +257,30 @@ class ProfileRepository:
                     "id": row["id"],
                     "preferred_name": display_name,
                     "current_metro": row["current_metro"],
+                    "created_at": row["created_at"],
+                    "current_status": latest_status_by_profile.get(row["id"]),
                 }
             )
 
         return summaries
+
+    def delete(self, profile_id: str) -> None:
+        """Permanently delete a profile and every job_history row for it.
+
+        This is irreversible — callers must gate it behind an explicit
+        confirmation step (see next_phase_plan.md §2/§3.4). Raises KeyError
+        if profile_id doesn't exist.
+        """
+        with sqlite3.connect(self._db_path) as conn:
+            row = conn.execute(
+                "SELECT id FROM profiles WHERE id = ?", (profile_id,)
+            ).fetchone()
+            if row is None:
+                raise KeyError(profile_id)
+
+            conn.execute("DELETE FROM job_history WHERE profile_id = ?", (profile_id,))
+            conn.execute("DELETE FROM profiles WHERE id = ?", (profile_id,))
+            conn.commit()
 
     def add_history_entry(
         self,
