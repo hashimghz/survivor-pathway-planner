@@ -213,7 +213,8 @@ def _load_profile(profile_id: str, repository) -> None:
         st.error("Profile not found — it may have been deleted.")
         return
 
-    ticket = profile_to_ticket(profile, pepper)
+    job_history = repository.get_history(profile_id)
+    ticket = profile_to_ticket(profile, pepper, job_history=job_history)
 
     st.session_state["active_profile_id"] = profile_id
     st.session_state["active_ticket"] = ticket

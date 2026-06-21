@@ -77,7 +77,7 @@ class ProfileRepository:
         identity_json = profile.identity.model_dump_json()
         encrypted_identity = encrypt_pii(identity_json, self._aes_key)
         non_pii_json = profile.model_dump_json(exclude={"identity"})
-        created_at = datetime.datetime.utcnow().isoformat() + "Z"
+        created_at = datetime.datetime.now(datetime.UTC).replace(tzinfo=None).isoformat() + "Z"
 
         with sqlite3.connect(self._db_path) as conn:
             conn.execute(
@@ -322,7 +322,7 @@ class ProfileRepository:
 
         import datetime
         entry_id = str(uuid.uuid4())
-        recorded_at = datetime.datetime.utcnow().isoformat() + "Z"
+        recorded_at = datetime.datetime.now(datetime.UTC).replace(tzinfo=None).isoformat() + "Z"
 
         with sqlite3.connect(self._db_path) as conn:
             conn.execute(

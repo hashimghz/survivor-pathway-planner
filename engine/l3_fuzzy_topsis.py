@@ -3,7 +3,7 @@
 For each surviving occupation, computes a per-criterion fit score in [0, 1] by
 mapping the survivor's graded preferences (trigger / avoid / ok) onto the
 occupation's work-context ratings via triangular tolerance bands, then
-aggregates the nine criterion scores into one fit score using a TOPSIS
+aggregates the ten criterion scores into one fit score using a TOPSIS
 distance-to-ideal formula with domain-tuned weights.
 
 Internal use only. Public entry: ``score(ticket, occupations) -> list[ScoredOccupation]``.
@@ -12,7 +12,7 @@ public Candidate.
 
 Algorithm summary
 -----------------
-1. Per-criterion fit (9 dimensions, each in [0, 1]):
+1. Per-criterion fit (10 dimensions, each in [0, 1]):
    - Six "graded" criteria map survivor preference to a tolerance band; an
      occupation attribute above the band penalises fit linearly. The penalty
      slope is steeper for ``trigger`` than for ``avoid``.
@@ -24,6 +24,10 @@ Algorithm summary
    - commute_fit: stub — the data layer does not currently carry occupation
      location, so this returns 1.0 across the board. Wire up once posting
      locations land.
+   - history_fit (next_phase_plan.md §3.6b): mild, uniform deprioritization
+     for any occupation the survivor has a job_history entry for, regardless
+     of outcome. Soft signal only — never a hard exclusion (that's a
+     deliberate v1 simplification, flagged for revisit later).
 
 2. TOPSIS aggregation:
    For benefit criteria with each score already in [0, 1]:
@@ -45,9 +49,17 @@ from models import CriteriaBreakdown, GradedLevel, Occupation, Ticket
 # Weights — sum to 1.0. Skewed toward skill_match, wage_fit, and isolation
 # because those carry the strongest survivor-safety and economic signal.
 # Move to engine/config/topsis_weights.yaml once tuning matters.
+#
+# `history_fit` (next_phase_plan.md §3.6b) is computed as a proportional
+# trim of the original 9, not hardcoded alongside them — `_BASE_WEIGHTS`
+# stays the single source of truth for the *relative* importance of the
+# original criteria, and `_HISTORY_FIT_WEIGHT` is the only number that
+# needs sign-off if this gets retuned later. Computing the trim rather than
+# writing out nine more decimal literals also guarantees the sum is exactly
+# 1.0 (mod float epsilon) instead of relying on someone's arithmetic.
 # ---------------------------------------------------------------------------
 
-WEIGHTS: dict[str, float] = {
+_BASE_WEIGHTS: dict[str, float] = {
     "skill_match":         0.20,
     "wage_fit":            0.18,
     "isolation_fit":       0.14,
@@ -58,6 +70,14 @@ WEIGHTS: dict[str, float] = {
     "male_dominated_fit":  0.07,
     "commute_fit":         0.06,
 }
+assert abs(sum(_BASE_WEIGHTS.values()) - 1.0) < 1e-9, "base TOPSIS weights must sum to 1.0"
+
+_HISTORY_FIT_WEIGHT = 0.08
+
+WEIGHTS: dict[str, float] = {
+    name: weight * (1.0 - _HISTORY_FIT_WEIGHT) for name, weight in _BASE_WEIGHTS.items()
+}
+WEIGHTS["history_fit"] = _HISTORY_FIT_WEIGHT
 assert abs(sum(WEIGHTS.values()) - 1.0) < 1e-9, "TOPSIS weights must sum to 1.0"
 
 
@@ -228,7 +248,29 @@ def _male_dominated_fit(ticket: Ticket, occupation: Occupation) -> float:
     return 0.7 if pref == GradedLevel.TRIGGER else 1.0
 
 
-def _build_breakdown(ticket: Ticket, occupation: Occupation) -> CriteriaBreakdown:
+def _history_fit(occupation: Occupation, history_codes: frozenset[str]) -> float:
+    """Mild, uniform deprioritization for a previously-tried occupation.
+
+    next_phase_plan.md §1: "regardless of what the outcome was" — a `hired`
+    entry scores the same as a `rejected` one. 0.3 matches the codebase's
+    existing "weak signal" convention (see `_skill_match`'s no-match case)
+    rather than introducing a new magic number. Soft signal only: this never
+    removes an occupation from results, just nudges it down when scores are
+    otherwise close.
+
+    `history_codes` is a pre-built set, not `ticket.job_history` directly —
+    callers build it once per `score()` call (see below) so this stays an
+    O(1) lookup per occupation instead of re-scanning the full history list
+    for every one of the ~1,000 occupations being scored.
+    """
+    return 0.3 if occupation.code in history_codes else 1.0
+
+
+def _build_breakdown(
+    ticket: Ticket,
+    occupation: Occupation,
+    history_codes: frozenset[str] = frozenset(),
+) -> CriteriaBreakdown:
     return CriteriaBreakdown(
         skill_match         = _skill_match(ticket, occupation),
         wage_fit            = _wage_fit(ticket, occupation),
@@ -239,6 +281,7 @@ def _build_breakdown(ticket: Ticket, occupation: Occupation) -> CriteriaBreakdow
         uniformed_role_fit  = _uniformed_role_fit(ticket, occupation),
         male_dominated_fit  = _male_dominated_fit(ticket, occupation),
         schedule_fit        = _night_shift_proxy(ticket, occupation),
+        history_fit         = _history_fit(occupation, history_codes),
     )
 
 
@@ -262,9 +305,15 @@ def _aggregate(breakdown: CriteriaBreakdown) -> float:
 
 def score(ticket: Ticket, occupations: list[Occupation]) -> list[ScoredOccupation]:
     """Score and rank occupations. Output sorted by fit_score descending."""
+    # Built once per call, not once per occupation — ticket.job_history is
+    # small (a handful of entries at most) and occupations can be ~1,000, so
+    # this turns a potential O(occupations × history) scan into O(occupations
+    # + history) with an O(1) lookup inside the per-occupation loop.
+    history_codes = frozenset(entry.occupation_code for entry in ticket.job_history)
+
     scored: list[ScoredOccupation] = []
     for occ in occupations:
-        breakdown = _build_breakdown(ticket, occ)
+        breakdown = _build_breakdown(ticket, occ, history_codes)
         fit = _aggregate(breakdown)
         scored.append(
             ScoredOccupation(occupation=occ, fit_score=fit, criteria_breakdown=breakdown)
