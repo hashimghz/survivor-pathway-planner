@@ -607,14 +607,19 @@ def main() -> None:
                 # Edit path — update in place, clear stale results.
                 repo.update(edit_profile_id, profile)
                 profile_id = edit_profile_id
+                # A brand-new profile can't have history yet (it didn't
+                # exist a moment ago), so only fetch it on the edit path —
+                # skips a pointless query on every fresh submission.
+                job_history = repo.get_history(profile_id)
                 # Clean up edit-mode session keys.
                 for key in ("edit_profile_id", "_edit_profile", "_lang_prefilled"):
                     st.session_state.pop(key, None)
             else:
                 # New profile path.
                 profile_id = repo.save(profile)
+                job_history = []
 
-            ticket = profile_to_ticket(profile, pepper)
+            ticket = profile_to_ticket(profile, pepper, job_history=job_history)
             st.session_state["active_profile_id"] = profile_id
             st.session_state["active_ticket"] = ticket
             # Fall back to legal name when preferred name is left blank,

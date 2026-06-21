@@ -1,6 +1,6 @@
 """Candidate details modal — full breakdown opened from the Details action.
 
-Shows all nine criteria dimensions, full explanation, framings, risks,
+Shows all ten criteria dimensions, full explanation, framings, risks,
 optional upskill step, and wage percentiles. No layer references in any
 string this component emits.
 """
@@ -27,6 +27,11 @@ DETAILS_CRITERIA_ORDER = [
     ("uniformed_role_fit", "Uniformed role"),
     ("male_dominated_fit", "Male-dominated team"),
     ("schedule_fit", "Schedule fit"),
+    # 1.0 = never tried before, 0.3 = a job_history entry exists for this
+    # occupation (next_phase_plan.md §3.6b) — framed positively ("Fresh
+    # option") since a high bar is the good outcome here, same convention
+    # as every other bar in this list.
+    ("history_fit", "Fresh option"),
 ]
 
 

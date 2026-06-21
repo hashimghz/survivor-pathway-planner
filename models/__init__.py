@@ -325,6 +325,25 @@ class Profile(BaseModel):
 # =============================================================================
 
 
+class HistoryEntrySummary(BaseModel):
+    """One past job_history record, carried onto the anonymous Ticket so L3
+    can softly deprioritize previously-tried occupations (next_phase_plan.md
+    §3.6b) and L4 can reference past outcomes in fit_explanation/risk_flags.
+
+    No identity-level PII here — `caseworker_notes` is the same class of
+    caseworker free text that already crosses onto Ticket unredacted via
+    `long_term_goal`. Deliberately not the same shape as the `job_history`
+    SQLite rows (db/repository.py) — this drops `id`/`profile_id`, which
+    have no meaning once anonymised.
+    """
+
+    occupation_code: str
+    occupation_title: str
+    status: str
+    caseworker_notes: str = ""
+    recorded_at: str = ""
+
+
 class Ticket(BaseModel):
     """Anonymous payload produced by the anonymiser.
 
@@ -332,6 +351,13 @@ class Ticket(BaseModel):
     """
 
     ticket_id: str = Field(description="HMAC of the profile UUID with the project pepper")
+
+    # Fetched by the caller (app/pages/Profile.py, saved_profiles_list.py)
+    # and passed into core.anonymizer.profile_to_ticket explicitly — the
+    # anonymiser itself stays a pure function and does no DB I/O (see
+    # next_phase_plan.md §2). Empty for brand-new profiles and for sample
+    # tickets, which aren't backed by a DB row at all.
+    job_history: list[HistoryEntrySummary] = Field(default_factory=list)
 
     languages: list[Language]
     current_metro: str
@@ -423,7 +449,15 @@ class Occupation(BaseModel):
 
 
 class CriteriaBreakdown(BaseModel):
-    """Per-dimension fit scores in [0, 1]. The UI renders these as bars."""
+    """Per-dimension fit scores in [0, 1]. The UI renders these as bars.
+
+    `history_fit` added for next_phase_plan.md §3.6b: 1.0 when the survivor
+    has no job_history entry for this occupation, a lower score when they
+    do (regardless of outcome — see engine/l3_fuzzy_topsis.py's
+    `_history_fit`). Defaults to 1.0 ("no history") so existing call sites
+    that construct a CriteriaBreakdown without it — tests, mainly — don't
+    need updating just because this dimension exists.
+    """
 
     skill_match: Confidence
     wage_fit: Confidence
@@ -434,6 +468,7 @@ class CriteriaBreakdown(BaseModel):
     uniformed_role_fit: Confidence
     male_dominated_fit: Confidence
     schedule_fit: Confidence
+    history_fit: Confidence = 1.0
 
 
 class WageRange(BaseModel):

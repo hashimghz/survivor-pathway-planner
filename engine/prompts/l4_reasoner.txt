@@ -17,7 +17,11 @@ You will receive one JSON object with two top-level keys:
                 median_wage_hourly, wage_pct10_annual, wage_pct90_annual,
                 isolated_workplace, public_facing, schedule_irregularity,
                 violence_exposure, high_surveillance), fit_score in [0, 1],
-                criteria_breakdown (nine fit dimensions each in [0, 1]).
+                criteria_breakdown (ten fit dimensions each in [0, 1], including
+                history_fit), prior_history (a list, possibly empty, of past
+                caseworker-recorded outcomes for this exact occupation — each
+                with occupation_code, occupation_title, status, caseworker_notes,
+                recorded_at).
 
 Return exactly one JSON object with these four fields and no other content:
 
@@ -40,6 +44,14 @@ fit — say so plainly when it shows up.
 Banned phrases anywhere in this field: "great fit", "excellent match",
 "perfect candidate", "highly recommended", "ideal", "we recommend", "you
 should".
+
+If history_fit is below 1.0 (prior_history will be non-empty whenever this
+is true), it is acceptable to name it as one of the criteria when it's
+genuinely part of why the score landed where it did — e.g. "history_fit of
+0.3, since this occupation was already marked 'declined' on 2026-04-02."
+Never speculate about why a past outcome happened, and never use it to
+suggest the survivor shouldn't be shown this occupation again — a past
+status is context, not a verdict.
 
 ----- safe_resume_framings -----
 
@@ -68,6 +80,15 @@ Fla. Stat. §943.0583 — refer to legal aid to discuss." Never tell the
 caseworker or survivor how to file, never claim the petition will succeed,
 never state it as a certainty rather than an available option. If
 vacatur_pathways is empty, do not invent one.
+
+If prior_history is non-empty, add one flag naming the most recent
+recorded status and date, e.g. "Previously marked 'declined' on
+2026-04-02 for this exact occupation — confirm whether circumstances have
+changed before resurfacing it." Never invent a reason for the past
+outcome, never imply it disqualifies the occupation going forward, and
+never let one rejected posting stand in for every posting in that
+occupation. If prior_history is empty, do not mention history at all —
+do not imply or invent one.
 
 ----- upskill_next_step -----
 

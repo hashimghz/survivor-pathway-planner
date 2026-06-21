@@ -11,7 +11,7 @@ from pydantic import ValidationError
 
 from engine.l3_fuzzy_topsis import ScoredOccupation
 from engine.vacatur import applicable_pathways
-from models import Candidate, Occupation, Ticket, WageRange
+from models import Candidate, HistoryEntrySummary, Occupation, Ticket, WageRange
 
 _HOURS_PER_YEAR = Decimal(2080)
 _TWO_PLACES = Decimal("0.01")
@@ -81,7 +81,14 @@ def _build_profile_payload(ticket: Ticket) -> dict:
     }
 
 
-def _build_candidate_payload(scored: ScoredOccupation) -> dict:
+def _build_candidate_payload(scored: ScoredOccupation, history: list[HistoryEntrySummary]) -> dict:
+    """`history` is pre-filtered to this candidate's occupation_code by the
+    caller (see `explain()`) — passing the survivor's *entire* job_history
+    into every one of the top-N LLM calls would mean repeating mostly
+    irrelevant entries (records for other occupations) in every request,
+    larger payloads for no benefit. Filtering once per candidate keeps each
+    call's prior_history scoped to what's actually relevant to it.
+    """
     occ = scored.occupation
     median = occ.median_wage_hourly
     return {
@@ -100,6 +107,7 @@ def _build_candidate_payload(scored: ScoredOccupation) -> dict:
         },
         "fit_score": scored.fit_score,
         "criteria_breakdown": scored.criteria_breakdown.model_dump(),
+        "prior_history": [h.model_dump(mode="json") for h in history],
     }
 
 
@@ -172,6 +180,14 @@ def explain(
     client = anthropic.Anthropic()
     candidates: list[Candidate] = []
 
+    # Hoisted out of the per-candidate loop: this is profile-level data
+    # (skills, constraints, vacatur pathways, etc.) that never changes
+    # across the up-to-top_n LLM calls below. It was previously rebuilt
+    # from scratch — including a vacatur lookup — on every single
+    # iteration, identical result each time. Computing it once here cuts
+    # that redundant work without changing what gets sent.
+    profile_payload = _build_profile_payload(ticket)
+
     for scored in ranked:
         if len(candidates) >= top_n:
             break
@@ -188,9 +204,12 @@ def explain(
         except LLMSchemaError:
             continue
 
+        relevant_history = [
+            h for h in ticket.job_history if h.occupation_code == scored.occupation.code
+        ]
         payload = {
-            "profile": _build_profile_payload(ticket),
-            "candidate": _build_candidate_payload(scored),
+            "profile": profile_payload,
+            "candidate": _build_candidate_payload(scored, relevant_history),
         }
         llm_json = _call_llm(client, payload)
 
