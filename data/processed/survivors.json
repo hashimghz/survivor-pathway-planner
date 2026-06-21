@@ -1,0 +1,1247 @@
+[
+  {
+    "id": "f5a0e0b6-5a28-48ce-b493-ccef08dfc473",
+    "legal_name": "Daniela Rivera",
+    "preferred_name": "Daniela",
+    "pronouns": "they/them",
+    "dob": "1990-03-24",
+    "safe_phone": "(555) 011-8935",
+    "safe_contact_method": "phone",
+    "caseworker_notes": "Highly constrained profile; expect the engine to surface very few options and trigger a constraint audit for caseworker review.",
+    "languages": [
+      {
+        "code": "en",
+        "fluency_1_to_5": 1
+      },
+      {
+        "code": "so",
+        "fluency_1_to_5": 2
+      }
+    ],
+    "current_metro": "Seattle, WA",
+    "education_highest": "associates",
+    "disabilities": [
+      "cognitive"
+    ],
+    "dependents": 4,
+    "skills_raw": [
+      {
+        "skill_id": "f45ed0de-2141-4a0d-812f-c3319fc5226b",
+        "text": "Speaking",
+        "level_1_to_5": 2,
+        "citability": "transferable",
+        "safe_framing": "Front-of-house customer communication",
+        "source": "exploitation"
+      },
+      {
+        "skill_id": "2ef54d3a-debb-4e95-aaff-1ddcb3049227",
+        "text": "Social Perceptiveness",
+        "level_1_to_5": 1,
+        "citability": "transferable",
+        "safe_framing": "De-escalation and rapport-building",
+        "source": "exploitation"
+      },
+      {
+        "skill_id": "841b164d-0138-48d7-a0ec-15bd0af06e6c",
+        "text": "Quality Control Analysis",
+        "level_1_to_5": 5,
+        "citability": "transferable",
+        "safe_framing": "Developed quality control analysis through coursework and training.",
+        "source": "education"
+      },
+      {
+        "skill_id": "4dca77e0-9c1d-477f-a23e-430f97de58e4",
+        "text": "Programming",
+        "level_1_to_5": 4,
+        "citability": "direct",
+        "safe_framing": "Developed programming through coursework and training.",
+        "source": "education"
+      },
+      {
+        "skill_id": "459575d1-5284-48cb-902e-4a01a8384368",
+        "text": "Operations Analysis",
+        "level_1_to_5": 4,
+        "citability": "direct",
+        "safe_framing": "Self-developed operations analysis through independent practice.",
+        "source": "self_taught"
+      }
+    ],
+    "hard_constraints": {
+      "work_authorization": "no",
+      "has_vehicle": false,
+      "has_valid_license": false,
+      "transit_access": false,
+      "exclusion_zones": [],
+      "exclusion_industries": [
+        "transportation",
+        "retail_overnight"
+      ],
+      "exclusion_employers": [],
+      "requires_clean_record": true,
+      "requires_drivers_license": true,
+      "requires_ssn": false,
+      "requires_credit_check": false
+    },
+    "graded_constraints": {
+      "night_shift": "trigger",
+      "isolated_workplace": "trigger",
+      "customer_facing": "avoid",
+      "male_dominated_team": "ok",
+      "uniformed_role": "ok"
+    },
+    "stability_needs": {
+      "requires_overnight_travel": "avoid",
+      "max_commute_minutes": 24,
+      "available_shifts": [
+        "morning",
+        "afternoon"
+      ],
+      "wage_minimum_hourly": 23.05
+    },
+    "legal_profile": {
+      "record_categories": [
+        "prostitution_related",
+        "theft_property"
+      ],
+      "expungement_eligible": [],
+      "jurisdiction": "OH"
+    },
+    "documentation_status": {
+      "state_id": true,
+      "drivers_license": true,
+      "ssn": true,
+      "work_authorization_doc": false,
+      "passport": true,
+      "professional_licenses": [
+        "food_handler",
+        "forklift"
+      ]
+    },
+    "goals": {
+      "industries_of_interest": [
+        "hospitality",
+        "agriculture"
+      ],
+      "training_appetite": "degree",
+      "long_term_goal": "Find safe, daytime work close to home while continuing therapy."
+    }
+  },
+  {
+    "id": "349aba61-35e6-4b99-9ff9-2c8cc1844e40",
+    "legal_name": "Jasmine Brooks",
+    "preferred_name": "Nay",
+    "pronouns": "they/them",
+    "dob": "1979-06-08",
+    "safe_phone": "(555) 012-8348",
+    "safe_contact_method": "caseworker_only",
+    "caseworker_notes": "Prior record is expungement-eligible; pursuing expungement unlocks clean-record-required roles.",
+    "languages": [
+      {
+        "code": "es",
+        "fluency_1_to_5": 2
+      }
+    ],
+    "current_metro": "Detroit, MI",
+    "education_highest": "high_school_or_ged",
+    "disabilities": [
+      "ptsd",
+      "cognitive"
+    ],
+    "dependents": 0,
+    "skills_raw": [
+      {
+        "skill_id": "576731db-a8b2-40cd-bbb7-dba9b35b2b6a",
+        "text": "Service Orientation",
+        "level_1_to_5": 1,
+        "citability": "transferable",
+        "safe_framing": "High-volume customer service",
+        "source": "exploitation"
+      },
+      {
+        "skill_id": "05e0472c-cfbb-4395-b455-c79453bd7eca",
+        "text": "Persuasion",
+        "level_1_to_5": 2,
+        "citability": "transferable",
+        "safe_framing": "Customer retention and upselling",
+        "source": "exploitation"
+      },
+      {
+        "skill_id": "87f1b805-7df1-4c86-93f5-b743458217a3",
+        "text": "Programming",
+        "level_1_to_5": 3,
+        "citability": "unsafe",
+        "safe_framing": "Self-developed programming through independent practice.",
+        "source": "self_taught"
+      }
+    ],
+    "hard_constraints": {
+      "work_authorization": "yes",
+      "has_vehicle": false,
+      "has_valid_license": true,
+      "transit_access": true,
+      "exclusion_zones": [
+        {
+          "lat": 42.5251,
+          "lng": -95.0621,
+          "radius_mi": 3.6
+        },
+        {
+          "lat": 39.3819,
+          "lng": -76.0248,
+          "radius_mi": 13.2
+        }
+      ],
+      "exclusion_industries": [
+        "agriculture"
+      ],
+      "exclusion_employers": [],
+      "requires_clean_record": true,
+      "requires_drivers_license": false,
+      "requires_ssn": false,
+      "requires_credit_check": false
+    },
+    "graded_constraints": {
+      "night_shift": "ok",
+      "isolated_workplace": "ok",
+      "customer_facing": "trigger",
+      "male_dominated_team": "avoid",
+      "uniformed_role": "ok"
+    },
+    "stability_needs": {
+      "requires_overnight_travel": "ok",
+      "max_commute_minutes": 50,
+      "available_shifts": [
+        "morning"
+      ],
+      "wage_minimum_hourly": 20.28
+    },
+    "legal_profile": {
+      "record_categories": [
+        "prostitution_related"
+      ],
+      "expungement_eligible": [
+        "prostitution_related"
+      ],
+      "jurisdiction": "NY"
+    },
+    "documentation_status": {
+      "state_id": false,
+      "drivers_license": false,
+      "ssn": true,
+      "work_authorization_doc": false,
+      "passport": false,
+      "professional_licenses": []
+    },
+    "goals": {
+      "industries_of_interest": [
+        "agriculture",
+        "hospitality"
+      ],
+      "training_appetite": "degree",
+      "long_term_goal": "Transition into an administrative or office support career path."
+    }
+  },
+  {
+    "id": "90c1dc61-a691-4fba-b722-f9fe08e6cb6b",
+    "legal_name": "Maria Volkov",
+    "preferred_name": "Maria",
+    "pronouns": "he/him",
+    "dob": "2004-02-23",
+    "safe_phone": "(555) 010-3750",
+    "safe_contact_method": "phone",
+    "caseworker_notes": "Client is motivated and prefers structured, predictable work environments.",
+    "languages": [
+      {
+        "code": "es",
+        "fluency_1_to_5": 2
+      },
+      {
+        "code": "ht",
+        "fluency_1_to_5": 3
+      }
+    ],
+    "current_metro": "Detroit, MI",
+    "education_highest": "some_college",
+    "disabilities": [
+      "cognitive"
+    ],
+    "dependents": 3,
+    "skills_raw": [
+      {
+        "skill_id": "f1651c15-da4c-412e-b887-b20f48099777",
+        "text": "Critical Thinking",
+        "level_1_to_5": 1,
+        "citability": "unsafe",
+        "safe_framing": "Developed critical thinking through coursework and training.",
+        "source": "education"
+      },
+      {
+        "skill_id": "57df5633-be36-4caa-9f20-3cc73edcd865",
+        "text": "Quality Control Analysis",
+        "level_1_to_5": 1,
+        "citability": "unsafe",
+        "safe_framing": "Self-developed quality control analysis through independent practice.",
+        "source": "self_taught"
+      },
+      {
+        "skill_id": "36ae7715-ee9d-4833-b04a-dcf36bdfc6ba",
+        "text": "Operations Monitoring",
+        "level_1_to_5": 3,
+        "citability": "transferable",
+        "safe_framing": "Applied operations monitoring regularly in prior paid roles.",
+        "source": "prior_employment"
+      },
+      {
+        "skill_id": "e692743d-fdfe-46f9-82fe-df479c09b8b3",
+        "text": "Repairing",
+        "level_1_to_5": 2,
+        "citability": "direct",
+        "safe_framing": "Applied repairing regularly in prior paid roles.",
+        "source": "prior_employment"
+      }
+    ],
+    "hard_constraints": {
+      "work_authorization": "in_process",
+      "has_vehicle": true,
+      "has_valid_license": true,
+      "transit_access": false,
+      "exclusion_zones": [],
+      "exclusion_industries": [
+        "agriculture",
+        "domestic_work",
+        "transportation"
+      ],
+      "exclusion_employers": [],
+      "requires_clean_record": true,
+      "requires_drivers_license": false,
+      "requires_ssn": true,
+      "requires_credit_check": false
+    },
+    "graded_constraints": {
+      "night_shift": "ok",
+      "isolated_workplace": "trigger",
+      "customer_facing": "ok",
+      "male_dominated_team": "ok",
+      "uniformed_role": "ok"
+    },
+    "stability_needs": {
+      "requires_overnight_travel": "ok",
+      "max_commute_minutes": 50,
+      "available_shifts": [
+        "morning",
+        "afternoon",
+        "evening"
+      ],
+      "wage_minimum_hourly": 17.18
+    },
+    "legal_profile": {
+      "record_categories": [
+        "prostitution_related"
+      ],
+      "expungement_eligible": [
+        "prostitution_related"
+      ],
+      "jurisdiction": "TX"
+    },
+    "documentation_status": {
+      "state_id": true,
+      "drivers_license": false,
+      "ssn": true,
+      "work_authorization_doc": true,
+      "passport": false,
+      "professional_licenses": []
+    },
+    "goals": {
+      "industries_of_interest": [
+        "agriculture",
+        "transportation",
+        "retail_overnight"
+      ],
+      "training_appetite": "none",
+      "long_term_goal": "Find flexible part-time work that scales up as confidence returns."
+    }
+  },
+  {
+    "id": "12cfd14b-0731-4e06-932a-09508860fd66",
+    "legal_name": "Jasmine Okafor",
+    "preferred_name": "Jasmine",
+    "pronouns": "they/them",
+    "dob": "2001-10-16",
+    "safe_phone": "(555) 018-8701",
+    "safe_contact_method": "phone",
+    "caseworker_notes": "Client is motivated and prefers structured, predictable work environments.",
+    "languages": [
+      {
+        "code": "es",
+        "fluency_1_to_5": 5
+      },
+      {
+        "code": "vi",
+        "fluency_1_to_5": 1
+      },
+      {
+        "code": "so",
+        "fluency_1_to_5": 2
+      }
+    ],
+    "current_metro": "Las Vegas, NV",
+    "education_highest": "none",
+    "disabilities": [
+      "ptsd",
+      "chronic_pain"
+    ],
+    "dependents": 1,
+    "skills_raw": [
+      {
+        "skill_id": "04155355-dc17-4643-9764-e6248b8ad270",
+        "text": "Service Orientation",
+        "level_1_to_5": 1,
+        "citability": "transferable",
+        "safe_framing": "High-volume customer service",
+        "source": "exploitation"
+      },
+      {
+        "skill_id": "4c9689fd-47b0-4fea-af17-7ecbf30c8622",
+        "text": "Complex Problem Solving",
+        "level_1_to_5": 5,
+        "citability": "unsafe",
+        "safe_framing": "Developed complex problem solving through coursework and training.",
+        "source": "education"
+      },
+      {
+        "skill_id": "086de05e-f223-4885-8059-848bd45f7fc4",
+        "text": "Troubleshooting",
+        "level_1_to_5": 5,
+        "citability": "direct",
+        "safe_framing": "Applied troubleshooting regularly in prior paid roles.",
+        "source": "prior_employment"
+      },
+      {
+        "skill_id": "170b7c94-7754-475e-9100-cbd3d3a8e22e",
+        "text": "Learning Strategies",
+        "level_1_to_5": 3,
+        "citability": "unsafe",
+        "safe_framing": "Applied learning strategies regularly in prior paid roles.",
+        "source": "prior_employment"
+      },
+      {
+        "skill_id": "e4fb1abb-3425-41c6-b49d-d69f1ca00a36",
+        "text": "Equipment Selection",
+        "level_1_to_5": 1,
+        "citability": "transferable",
+        "safe_framing": "Applied equipment selection regularly in prior paid roles.",
+        "source": "prior_employment"
+      }
+    ],
+    "hard_constraints": {
+      "work_authorization": "yes",
+      "has_vehicle": false,
+      "has_valid_license": false,
+      "transit_access": true,
+      "exclusion_zones": [],
+      "exclusion_industries": [
+        "salon_nail",
+        "transportation"
+      ],
+      "exclusion_employers": [],
+      "requires_clean_record": false,
+      "requires_drivers_license": true,
+      "requires_ssn": false,
+      "requires_credit_check": false
+    },
+    "graded_constraints": {
+      "night_shift": "ok",
+      "isolated_workplace": "ok",
+      "customer_facing": "ok",
+      "male_dominated_team": "ok",
+      "uniformed_role": "trigger"
+    },
+    "stability_needs": {
+      "requires_overnight_travel": "ok",
+      "max_commute_minutes": 53,
+      "available_shifts": [
+        "morning",
+        "afternoon",
+        "evening"
+      ],
+      "wage_minimum_hourly": 18.34
+    },
+    "legal_profile": {
+      "record_categories": [
+        "theft_property"
+      ],
+      "expungement_eligible": [],
+      "jurisdiction": "MI"
+    },
+    "documentation_status": {
+      "state_id": false,
+      "drivers_license": false,
+      "ssn": true,
+      "work_authorization_doc": true,
+      "passport": false,
+      "professional_licenses": [
+        "forklift",
+        "cna"
+      ]
+    },
+    "goals": {
+      "industries_of_interest": [],
+      "training_appetite": "short_course",
+      "long_term_goal": "Find safe, daytime work close to home while continuing therapy."
+    }
+  },
+  {
+    "id": "80837511-9ffd-4e9b-bc11-3e35e39d0fcb",
+    "legal_name": "Ava Brooks",
+    "preferred_name": "Ava",
+    "pronouns": "she/her",
+    "dob": "1997-02-23",
+    "safe_phone": "(555) 012-8938",
+    "safe_contact_method": "phone",
+    "caseworker_notes": "Open to short training but cannot commit to multi-month programs due to childcare.",
+    "languages": [
+      {
+        "code": "ht",
+        "fluency_1_to_5": 2
+      },
+      {
+        "code": "vi",
+        "fluency_1_to_5": 1
+      },
+      {
+        "code": "tl",
+        "fluency_1_to_5": 3
+      }
+    ],
+    "current_metro": "Newark, NJ",
+    "education_highest": "none",
+    "disabilities": [],
+    "dependents": 4,
+    "skills_raw": [
+      {
+        "skill_id": "6688cac5-6e12-4fc1-a68d-92fa386f7d5a",
+        "text": "Monitoring",
+        "level_1_to_5": 3,
+        "citability": "direct",
+        "safe_framing": "Applied monitoring regularly in prior paid roles.",
+        "source": "prior_employment"
+      },
+      {
+        "skill_id": "d53765cd-86f8-4a32-802f-c21959d56900",
+        "text": "Service Orientation",
+        "level_1_to_5": 2,
+        "citability": "transferable",
+        "safe_framing": "Developed service orientation through coursework and training.",
+        "source": "education"
+      },
+      {
+        "skill_id": "7e24659f-c663-4bc4-936d-e662b6a95d8e",
+        "text": "Social Perceptiveness",
+        "level_1_to_5": 1,
+        "citability": "unsafe",
+        "safe_framing": "Applied social perceptiveness regularly in prior paid roles.",
+        "source": "prior_employment"
+      },
+      {
+        "skill_id": "bfc601ca-767f-4482-902a-a28dfd8b4244",
+        "text": "Coordination",
+        "level_1_to_5": 4,
+        "citability": "transferable",
+        "safe_framing": "Multi-party logistics coordination",
+        "source": "exploitation"
+      },
+      {
+        "skill_id": "096a581d-6d64-4d95-a164-0b6f2aa63a73",
+        "text": "Judgment and Decision Making",
+        "level_1_to_5": 4,
+        "citability": "direct",
+        "safe_framing": "Applied judgment and decision making regularly in prior paid roles.",
+        "source": "prior_employment"
+      },
+      {
+        "skill_id": "583545b1-a4a4-4b5b-8090-8943929e699c",
+        "text": "Negotiation",
+        "level_1_to_5": 2,
+        "citability": "transferable",
+        "safe_framing": "Vendor and client negotiation",
+        "source": "exploitation"
+      }
+    ],
+    "hard_constraints": {
+      "work_authorization": "yes",
+      "has_vehicle": false,
+      "has_valid_license": true,
+      "transit_access": true,
+      "exclusion_zones": [],
+      "exclusion_industries": [
+        "restaurant_back_of_house"
+      ],
+      "exclusion_employers": [],
+      "requires_clean_record": false,
+      "requires_drivers_license": false,
+      "requires_ssn": true,
+      "requires_credit_check": false
+    },
+    "graded_constraints": {
+      "night_shift": "avoid",
+      "isolated_workplace": "ok",
+      "customer_facing": "ok",
+      "male_dominated_team": "ok",
+      "uniformed_role": "trigger"
+    },
+    "stability_needs": {
+      "requires_overnight_travel": "ok",
+      "max_commute_minutes": 42,
+      "available_shifts": [
+        "morning",
+        "evening"
+      ],
+      "wage_minimum_hourly": 19.31
+    },
+    "legal_profile": {
+      "record_categories": [
+        "other",
+        "drug_possession"
+      ],
+      "expungement_eligible": [
+        "drug_possession"
+      ],
+      "jurisdiction": "WA"
+    },
+    "documentation_status": {
+      "state_id": true,
+      "drivers_license": true,
+      "ssn": false,
+      "work_authorization_doc": true,
+      "passport": false,
+      "professional_licenses": []
+    },
+    "goals": {
+      "industries_of_interest": [
+        "massage_parlor"
+      ],
+      "training_appetite": "certificate",
+      "long_term_goal": "Find flexible part-time work that scales up as confidence returns."
+    }
+  },
+  {
+    "id": "1952b84c-b630-42c1-84fc-9d4e454522d4",
+    "legal_name": "Daniela Patel",
+    "preferred_name": "Pri",
+    "pronouns": "he/him",
+    "dob": "1984-07-23",
+    "safe_phone": "(555) 014-9083",
+    "safe_contact_method": "phone",
+    "caseworker_notes": "Prefers small teams; large or male-dominated workplaces increase anxiety.",
+    "languages": [
+      {
+        "code": "pt",
+        "fluency_1_to_5": 2
+      },
+      {
+        "code": "tl",
+        "fluency_1_to_5": 5
+      }
+    ],
+    "current_metro": "Tampa, FL",
+    "education_highest": "some_high_school",
+    "disabilities": [
+      "cognitive",
+      "chronic_pain"
+    ],
+    "dependents": 3,
+    "skills_raw": [
+      {
+        "skill_id": "abb32d34-9402-4dd3-9de2-50361ce8eb83",
+        "text": "Management of Financial Resources",
+        "level_1_to_5": 5,
+        "citability": "unsafe",
+        "safe_framing": "Developed management of financial resources through coursework and training.",
+        "source": "education"
+      },
+      {
+        "skill_id": "5931619d-96e6-42fa-bbaf-ce7558f1a89e",
+        "text": "Systems Evaluation",
+        "level_1_to_5": 2,
+        "citability": "direct",
+        "safe_framing": "Developed systems evaluation through coursework and training.",
+        "source": "education"
+      },
+      {
+        "skill_id": "35d0e204-bf17-49b9-a50d-ce557d2b5934",
+        "text": "Social Perceptiveness",
+        "level_1_to_5": 2,
+        "citability": "direct",
+        "safe_framing": "Developed social perceptiveness through coursework and training.",
+        "source": "education"
+      },
+      {
+        "skill_id": "ba994637-8bae-4df6-8d10-1ddc68c32dae",
+        "text": "Science",
+        "level_1_to_5": 1,
+        "citability": "direct",
+        "safe_framing": "Applied science regularly in prior paid roles.",
+        "source": "prior_employment"
+      }
+    ],
+    "hard_constraints": {
+      "work_authorization": "in_process",
+      "has_vehicle": true,
+      "has_valid_license": false,
+      "transit_access": true,
+      "exclusion_zones": [],
+      "exclusion_industries": [
+        "transportation",
+        "domestic_work",
+        "restaurant_back_of_house"
+      ],
+      "exclusion_employers": [
+        "[redacted-C]"
+      ],
+      "requires_clean_record": false,
+      "requires_drivers_license": false,
+      "requires_ssn": true,
+      "requires_credit_check": false
+    },
+    "graded_constraints": {
+      "night_shift": "trigger",
+      "isolated_workplace": "ok",
+      "customer_facing": "ok",
+      "male_dominated_team": "trigger",
+      "uniformed_role": "avoid"
+    },
+    "stability_needs": {
+      "requires_overnight_travel": "avoid",
+      "max_commute_minutes": 86,
+      "available_shifts": [
+        "morning",
+        "afternoon"
+      ],
+      "wage_minimum_hourly": 19.5
+    },
+    "legal_profile": {
+      "record_categories": [],
+      "expungement_eligible": [],
+      "jurisdiction": "IL"
+    },
+    "documentation_status": {
+      "state_id": true,
+      "drivers_license": false,
+      "ssn": true,
+      "work_authorization_doc": false,
+      "passport": false,
+      "professional_licenses": [
+        "food_handler",
+        "cna"
+      ]
+    },
+    "goals": {
+      "industries_of_interest": [
+        "retail_overnight"
+      ],
+      "training_appetite": "short_course",
+      "long_term_goal": "Find safe, daytime work close to home while continuing therapy."
+    }
+  },
+  {
+    "id": "adae9039-1f1c-4b88-bd6f-a1a2cb1efd6d",
+    "legal_name": "Mei Morales",
+    "preferred_name": "Lin",
+    "pronouns": "they/them",
+    "dob": "1989-05-11",
+    "safe_phone": "(555) 015-8849",
+    "safe_contact_method": "phone",
+    "caseworker_notes": "Strong support network locally; main barrier is documentation, not motivation.",
+    "languages": [
+      {
+        "code": "ar",
+        "fluency_1_to_5": 4
+      }
+    ],
+    "current_metro": "Denver, CO",
+    "education_highest": "some_college",
+    "disabilities": [
+      "chronic_pain"
+    ],
+    "dependents": 3,
+    "skills_raw": [
+      {
+        "skill_id": "b117c01a-f921-4da0-9cbb-b6fc8480c29f",
+        "text": "Active Listening",
+        "level_1_to_5": 4,
+        "citability": "unsafe",
+        "safe_framing": "Client intake and needs assessment",
+        "source": "exploitation"
+      },
+      {
+        "skill_id": "e2f41990-b95b-41b9-8684-21a8feb13efd",
+        "text": "Equipment Maintenance",
+        "level_1_to_5": 5,
+        "citability": "unsafe",
+        "safe_framing": "Self-developed equipment maintenance through independent practice.",
+        "source": "self_taught"
+      },
+      {
+        "skill_id": "820720bf-2876-4af9-a1f5-153bd22cfc8c",
+        "text": "Systems Evaluation",
+        "level_1_to_5": 4,
+        "citability": "direct",
+        "safe_framing": "Self-developed systems evaluation through independent practice.",
+        "source": "self_taught"
+      },
+      {
+        "skill_id": "2a262548-191f-43dd-8f41-771a7f53711b",
+        "text": "Reading Comprehension",
+        "level_1_to_5": 4,
+        "citability": "transferable",
+        "safe_framing": "Applied reading comprehension regularly in prior paid roles.",
+        "source": "prior_employment"
+      },
+      {
+        "skill_id": "ad686515-1d2e-4a47-9fdc-a48891dea628",
+        "text": "Management of Financial Resources",
+        "level_1_to_5": 4,
+        "citability": "direct",
+        "safe_framing": "Developed management of financial resources through coursework and training.",
+        "source": "education"
+      },
+      {
+        "skill_id": "8e7c8fe2-4b21-4af6-8991-820a45f08490",
+        "text": "Coordination",
+        "level_1_to_5": 2,
+        "citability": "unsafe",
+        "safe_framing": "Multi-party logistics coordination",
+        "source": "exploitation"
+      }
+    ],
+    "hard_constraints": {
+      "work_authorization": "yes",
+      "has_vehicle": false,
+      "has_valid_license": true,
+      "transit_access": true,
+      "exclusion_zones": [
+        {
+          "lat": 46.1495,
+          "lng": -68.0988,
+          "radius_mi": 13.8
+        }
+      ],
+      "exclusion_industries": [
+        "hospitality",
+        "retail_overnight",
+        "massage_parlor"
+      ],
+      "exclusion_employers": [],
+      "requires_clean_record": false,
+      "requires_drivers_license": true,
+      "requires_ssn": true,
+      "requires_credit_check": false
+    },
+    "graded_constraints": {
+      "night_shift": "ok",
+      "isolated_workplace": "avoid",
+      "customer_facing": "ok",
+      "male_dominated_team": "avoid",
+      "uniformed_role": "ok"
+    },
+    "stability_needs": {
+      "requires_overnight_travel": "avoid",
+      "max_commute_minutes": 30,
+      "available_shifts": [
+        "morning",
+        "evening"
+      ],
+      "wage_minimum_hourly": 20.64
+    },
+    "legal_profile": {
+      "record_categories": [
+        "drug_possession"
+      ],
+      "expungement_eligible": [],
+      "jurisdiction": "AZ"
+    },
+    "documentation_status": {
+      "state_id": false,
+      "drivers_license": true,
+      "ssn": true,
+      "work_authorization_doc": true,
+      "passport": true,
+      "professional_licenses": []
+    },
+    "goals": {
+      "industries_of_interest": [],
+      "training_appetite": "short_course",
+      "long_term_goal": "Establish financial independence and rebuild credit over the next two years."
+    }
+  },
+  {
+    "id": "573b0c8a-a79d-49d3-8b6c-4048edae6040",
+    "legal_name": "Naomi Diaz",
+    "preferred_name": "Naomi",
+    "pronouns": "they/them",
+    "dob": "1994-05-04",
+    "safe_phone": "(555) 019-0420",
+    "safe_contact_method": "caseworker_only",
+    "caseworker_notes": "Cautious about anything resembling prior workplaces; review industry fit carefully.",
+    "languages": [
+      {
+        "code": "tl",
+        "fluency_1_to_5": 1
+      },
+      {
+        "code": "so",
+        "fluency_1_to_5": 5
+      },
+      {
+        "code": "ar",
+        "fluency_1_to_5": 2
+      }
+    ],
+    "current_metro": "Phoenix, AZ",
+    "education_highest": "none",
+    "disabilities": [
+      "ptsd"
+    ],
+    "dependents": 4,
+    "skills_raw": [
+      {
+        "skill_id": "3b14e992-d779-4e70-93e3-8cdace5c56eb",
+        "text": "Operation and Control",
+        "level_1_to_5": 1,
+        "citability": "transferable",
+        "safe_framing": "Developed operation and control through coursework and training.",
+        "source": "education"
+      },
+      {
+        "skill_id": "c3339108-61cc-4bb8-9064-2c638a40e0a3",
+        "text": "Mathematics",
+        "level_1_to_5": 4,
+        "citability": "transferable",
+        "safe_framing": "Developed mathematics through coursework and training.",
+        "source": "education"
+      },
+      {
+        "skill_id": "434b76ed-50a5-46dc-be30-d4d762b22235",
+        "text": "Management of Financial Resources",
+        "level_1_to_5": 4,
+        "citability": "direct",
+        "safe_framing": "Self-developed management of financial resources through independent practice.",
+        "source": "self_taught"
+      },
+      {
+        "skill_id": "cc991980-dfac-4131-b2e7-73f6a6b8ce84",
+        "text": "Programming",
+        "level_1_to_5": 5,
+        "citability": "unsafe",
+        "safe_framing": "Applied programming regularly in prior paid roles.",
+        "source": "prior_employment"
+      },
+      {
+        "skill_id": "2901c661-f999-4123-a2ae-a5de954e0713",
+        "text": "Reading Comprehension",
+        "level_1_to_5": 5,
+        "citability": "transferable",
+        "safe_framing": "Self-developed reading comprehension through independent practice.",
+        "source": "self_taught"
+      },
+      {
+        "skill_id": "f536dd9a-5995-468b-94c7-7cda7cc1b63d",
+        "text": "Quality Control Analysis",
+        "level_1_to_5": 4,
+        "citability": "transferable",
+        "safe_framing": "Self-developed quality control analysis through independent practice.",
+        "source": "self_taught"
+      }
+    ],
+    "hard_constraints": {
+      "work_authorization": "no",
+      "has_vehicle": false,
+      "has_valid_license": false,
+      "transit_access": false,
+      "exclusion_zones": [
+        {
+          "lat": 43.9919,
+          "lng": -90.2289,
+          "radius_mi": 8.7
+        }
+      ],
+      "exclusion_industries": [
+        "transportation"
+      ],
+      "exclusion_employers": [],
+      "requires_clean_record": false,
+      "requires_drivers_license": false,
+      "requires_ssn": false,
+      "requires_credit_check": false
+    },
+    "graded_constraints": {
+      "night_shift": "avoid",
+      "isolated_workplace": "ok",
+      "customer_facing": "avoid",
+      "male_dominated_team": "ok",
+      "uniformed_role": "avoid"
+    },
+    "stability_needs": {
+      "requires_overnight_travel": "avoid",
+      "max_commute_minutes": 55,
+      "available_shifts": [
+        "evening"
+      ],
+      "wage_minimum_hourly": 17.94
+    },
+    "legal_profile": {
+      "record_categories": [],
+      "expungement_eligible": [],
+      "jurisdiction": "NV"
+    },
+    "documentation_status": {
+      "state_id": false,
+      "drivers_license": false,
+      "ssn": false,
+      "work_authorization_doc": true,
+      "passport": false,
+      "professional_licenses": [
+        "forklift",
+        "food_handler"
+      ]
+    },
+    "goals": {
+      "industries_of_interest": [],
+      "training_appetite": "degree",
+      "long_term_goal": "Transition into an administrative or office support career path."
+    }
+  },
+  {
+    "id": "48f146a7-63f9-4d6d-b16c-cf8a896c6638",
+    "legal_name": "Nadia Diaz",
+    "preferred_name": "May",
+    "pronouns": "he/him",
+    "dob": "1977-12-18",
+    "safe_phone": "(555) 015-5764",
+    "safe_contact_method": "caseworker_only",
+    "caseworker_notes": "Currently in temporary housing; income timeline is the top priority.",
+    "languages": [
+      {
+        "code": "zh",
+        "fluency_1_to_5": 1
+      },
+      {
+        "code": "ar",
+        "fluency_1_to_5": 2
+      }
+    ],
+    "current_metro": "Newark, NJ",
+    "education_highest": "some_high_school",
+    "disabilities": [],
+    "dependents": 3,
+    "skills_raw": [
+      {
+        "skill_id": "2780ed9f-836c-4fc3-bcb7-393223c5eec2",
+        "text": "Management of Material Resources",
+        "level_1_to_5": 3,
+        "citability": "direct",
+        "safe_framing": "Developed management of material resources through coursework and training.",
+        "source": "education"
+      },
+      {
+        "skill_id": "5926d454-6aad-437c-bbfc-c8284544c176",
+        "text": "Technology Design",
+        "level_1_to_5": 5,
+        "citability": "unsafe",
+        "safe_framing": "Applied technology design regularly in prior paid roles.",
+        "source": "prior_employment"
+      },
+      {
+        "skill_id": "16a5aa12-a8d6-44b5-903a-37a9cc5ac1b6",
+        "text": "Critical Thinking",
+        "level_1_to_5": 1,
+        "citability": "transferable",
+        "safe_framing": "Applied critical thinking regularly in prior paid roles.",
+        "source": "prior_employment"
+      },
+      {
+        "skill_id": "8118680e-99bc-490b-9c93-3df49c6ab778",
+        "text": "Persuasion",
+        "level_1_to_5": 3,
+        "citability": "unsafe",
+        "safe_framing": "Self-developed persuasion through independent practice.",
+        "source": "self_taught"
+      },
+      {
+        "skill_id": "ef61b5ce-ad17-4838-88b8-7c0438383ec9",
+        "text": "Instructing",
+        "level_1_to_5": 4,
+        "citability": "direct",
+        "safe_framing": "Self-developed instructing through independent practice.",
+        "source": "self_taught"
+      }
+    ],
+    "hard_constraints": {
+      "work_authorization": "yes",
+      "has_vehicle": false,
+      "has_valid_license": false,
+      "transit_access": false,
+      "exclusion_zones": [],
+      "exclusion_industries": [],
+      "exclusion_employers": [],
+      "requires_clean_record": false,
+      "requires_drivers_license": false,
+      "requires_ssn": true,
+      "requires_credit_check": true
+    },
+    "graded_constraints": {
+      "night_shift": "ok",
+      "isolated_workplace": "ok",
+      "customer_facing": "ok",
+      "male_dominated_team": "avoid",
+      "uniformed_role": "trigger"
+    },
+    "stability_needs": {
+      "requires_overnight_travel": "ok",
+      "max_commute_minutes": 26,
+      "available_shifts": [
+        "morning"
+      ],
+      "wage_minimum_hourly": 21.1
+    },
+    "legal_profile": {
+      "record_categories": [],
+      "expungement_eligible": [],
+      "jurisdiction": "OH"
+    },
+    "documentation_status": {
+      "state_id": true,
+      "drivers_license": false,
+      "ssn": true,
+      "work_authorization_doc": false,
+      "passport": false,
+      "professional_licenses": [
+        "cna",
+        "food_handler"
+      ]
+    },
+    "goals": {
+      "industries_of_interest": [],
+      "training_appetite": "none",
+      "long_term_goal": "Transition into an administrative or office support career path."
+    }
+  },
+  {
+    "id": "076260f3-fb29-4c0f-8e91-694f7e657c42",
+    "legal_name": "Yuki Cole",
+    "preferred_name": "Yuki",
+    "pronouns": "they/them",
+    "dob": "1989-03-18",
+    "safe_phone": "(555) 011-2564",
+    "safe_contact_method": "phone",
+    "caseworker_notes": "Has reliable childcare on weekday mornings only.",
+    "languages": [
+      {
+        "code": "so",
+        "fluency_1_to_5": 4
+      },
+      {
+        "code": "ko",
+        "fluency_1_to_5": 3
+      }
+    ],
+    "current_metro": "Houston, TX",
+    "education_highest": "none",
+    "disabilities": [
+      "chronic_pain",
+      "cognitive"
+    ],
+    "dependents": 0,
+    "skills_raw": [
+      {
+        "skill_id": "6178e2ea-35d1-4ccf-8238-5bffe55c071e",
+        "text": "Monitoring",
+        "level_1_to_5": 5,
+        "citability": "transferable",
+        "safe_framing": "Applied monitoring regularly in prior paid roles.",
+        "source": "prior_employment"
+      },
+      {
+        "skill_id": "39457d08-5450-49bc-a5d3-2ea2a4391b94",
+        "text": "Operations Analysis",
+        "level_1_to_5": 3,
+        "citability": "unsafe",
+        "safe_framing": "Self-developed operations analysis through independent practice.",
+        "source": "self_taught"
+      },
+      {
+        "skill_id": "c45d45ba-b16f-4b13-85af-68bed7a54425",
+        "text": "Mathematics",
+        "level_1_to_5": 4,
+        "citability": "direct",
+        "safe_framing": "Developed mathematics through coursework and training.",
+        "source": "education"
+      },
+      {
+        "skill_id": "1d066c82-0617-459f-ad70-ac0a3be01dc8",
+        "text": "Speaking",
+        "level_1_to_5": 4,
+        "citability": "unsafe",
+        "safe_framing": "Developed speaking through coursework and training.",
+        "source": "education"
+      }
+    ],
+    "hard_constraints": {
+      "work_authorization": "yes",
+      "has_vehicle": true,
+      "has_valid_license": true,
+      "transit_access": false,
+      "exclusion_zones": [
+        {
+          "lat": 36.5109,
+          "lng": -95.8537,
+          "radius_mi": 2.9
+        }
+      ],
+      "exclusion_industries": [],
+      "exclusion_employers": [
+        "[redacted-C]",
+        "[redacted-B]"
+      ],
+      "requires_clean_record": true,
+      "requires_drivers_license": true,
+      "requires_ssn": false,
+      "requires_credit_check": false
+    },
+    "graded_constraints": {
+      "night_shift": "ok",
+      "isolated_workplace": "trigger",
+      "customer_facing": "ok",
+      "male_dominated_team": "ok",
+      "uniformed_role": "ok"
+    },
+    "stability_needs": {
+      "requires_overnight_travel": "ok",
+      "max_commute_minutes": 42,
+      "available_shifts": [
+        "morning"
+      ],
+      "wage_minimum_hourly": 19.12
+    },
+    "legal_profile": {
+      "record_categories": [],
+      "expungement_eligible": [],
+      "jurisdiction": "TN"
+    },
+    "documentation_status": {
+      "state_id": true,
+      "drivers_license": true,
+      "ssn": true,
+      "work_authorization_doc": true,
+      "passport": false,
+      "professional_licenses": []
+    },
+    "goals": {
+      "industries_of_interest": [
+        "massage_parlor"
+      ],
+      "training_appetite": "degree",
+      "long_term_goal": "Find safe, daytime work close to home while continuing therapy."
+    }
+  }
+]

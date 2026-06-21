@@ -1,0 +1,15 @@
+services:
+  pathway:
+    build: .
+    container_name: pathway-planner
+    ports:
+      - "8501:8501"
+    env_file:
+      - .env
+    environment:
+      PATHWAY_DB_PATH: /data/pathway.sqlite
+    volumes:
+      - pathway-data:/data
+
+volumes:
+  pathway-data:

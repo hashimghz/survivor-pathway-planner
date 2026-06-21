@@ -1,152 +1,85 @@
-# Survivor Career Pathway Planner
-## USAII Global AI Hackathon 2026 | Brief 5 Direction B | Graduate Track
+# Pathway planner
 
----
+A decision-support tool for caseworkers supporting trafficking survivors. Matches survivors to occupations while respecting safety, legal, and economic constraints. The caseworker decides; this tool surfaces options.
 
-## Project Structure
+## Background
 
-```
-pathway_planner/
-├── data/
-│   └── build_graph.py        ← DATA LAYER: occupational graph builder
-├── engine/
-│   └── constraint_engine.py  ← CONSTRAINT ENGINE: core AI component
-├── app/
-│   └── app.py                ← STREAMLIT UI: caseworker interface
-├── requirements.txt
-└── README.md
-```
+Trafficking survivors face compounding barriers when seeking economic stability: trauma-shaped constraints around work environment and schedule, legal complications (criminal records often acquired during exploitation), missing documentation, and wage requirements that low-wage retail can't meet. Existing job-matching tools optimize for placement metrics, not survivor agency.
 
----
+This tool inverts that. It treats the caseworker as the decision-maker, surfaces ranked options with explicit safety and economic tradeoffs, and shows what specific interventions — vacatur filings, DMV pathways, T-visa applications — would unlock more options.
 
-## Quick Start
+Built for the USAII Global AI Hackathon 2026, "AI for Systems & Society" track, Brief 5 (Safe Passage / Survivor Care), Direction B.
 
-### 1. Install dependencies
+## How it works
+
+Given an anonymized survivor profile, the system:
+
+1. **Filters** out occupations that violate hard constraints — excluded industries, missing documentation, criminal-record requirements, wage floor. Each exclusion records the named rule that cut it.
+2. **Scores** the surviving occupations on nine dimensions (skill match, wage fit, isolation, customer-facing intensity, schedule alignment, and more), using a fuzzy MCDA approach with TOPSIS distance-to-ideal aggregation.
+3. **Explains** the top candidates with Claude — generating fit prose, safe resume framings (respecting the caseworker's citability calls on each skill), and risk flags worth verifying before forwarding a posting.
+4. **Analyzes** what specific changes would unlock more options — separating actionable interventions from non-actionable safety exclusions.
+
+The UI presents results across three tabs: Candidates, Excluded, Interventions. The caseworker reads them and decides what to discuss with the survivor.
+
+## Architecture
+
+
+PII (legal name, phone, DOB) is encrypted at rest. The pipeline operates on anonymous Tickets — the LLM prompt never sees identity fields.
+
+## Stack
+
+- Python 3.12 with uv and ruff
+- Streamlit and Plotly for the UI
+- Pydantic v2 for contracts
+- SQLite + `cryptography` for encrypted persistence
+- Anthropic Claude (Sonnet 4.6, temperature 0, JSON-enforced output) for explanations
+- Docker for reproducible runs
+
+## Running
+
+### Prerequisites
+
+- Docker
+- An Anthropic API key
+
+### Set up
+
+Generate two 32-byte secrets for at-rest encryption and ticket-ID derivation:
+
 ```bash
-pip install -r requirements.txt
+python -c "import os, base64; print(base64.b64encode(os.urandom(32)).decode())"
 ```
 
-### 2. Run the Streamlit app
+Run twice. Put the outputs in `.env`:
+```
+PATHWAY_AES_KEY=<first output>
+PATHWAY_HMAC_PEPPER=<second output>
+ANTHROPIC_API_KEY=<your Anthropic key>
+```
+
+### Launch
+
 ```bash
-streamlit run app/app.py
+docker compose up --build
 ```
 
-The app opens at http://localhost:8501
+Open `http://localhost:8501`.
 
-### 3. Test the constraint engine directly
-```bash
-python engine/constraint_engine.py
-```
+The app loads with a demo profile (Daniela). She has `work_authorization=no`, so every occupation is filtered — which makes the Interventions tab the most interesting view: it surfaces "T-visa application; refer to PartnerOrg" as the highest-leverage caseworker action. To see the candidates pipeline at full strength, switch to another synthetic profile via the load flow.
 
-### 4. Rebuild the data layer
-```bash
-python data/build_graph.py
-```
+## Design principles
 
----
+- **The caseworker decides.** Every string in the UI avoids "recommend," "best match," "you should." Instead: "candidate," "consider," "worth verifying." The caseworker is responsible for the recommendation; this tool is responsible for surfacing tradeoffs.
+- **No surveillance.** This is decision support, not behavioral tracking. The threat model treats the survivor as the person being protected.
+- **PII stays encrypted.** Identity fields are encrypted at rest. The pipeline operates on anonymous tickets. The LLM never sees names.
+- **Excluded is honest.** Every filtered occupation appears in the Excluded tab with the named rule that cut it. No silent ranking-down.
+- **Interventions show leverage.** Where a single constraint change would unlock many options, and the change is something a caseworker can actually pursue, the Interventions tab names it.
 
-## What Each File Does
+## Data
 
-### data/build_graph.py
-- Defines 15 occupations and 8 training programs (synthetic O*NET-style data)
-- Builds a directed NetworkX graph: START → training programs → occupations
-- **To swap in real O*NET data:** Replace OCCUPATIONS and TRAINING_PROGRAMS lists
-  with calls to https://services.onetcenter.org/ (free API, register at O*NET)
+- **O*NET occupations** (988 SOC codes) enriched with BLS wage percentiles (p10, median, p90) and O*NET work-context ratings (contact_with_others, physical_proximity, violence_exposure, public_facing, schedule_irregularity).
+- **Synthetic survivor profiles** for development. No real survivor data is in this repo.
 
-### engine/constraint_engine.py
-- Takes a `ConstraintProfile` dataclass as input
-- Filters the graph by applying all constraints simultaneously
-- Runs graph traversal (nx.all_simple_paths) on the viable subgraph
-- Scores and ranks up to 3 viable pathways
-- Returns `PathwayResult` objects + `ConstraintAuditResult`
-- Triggers audit if fewer than 3 viable paths found
+## Status
 
-### app/app.py
-- Streamlit caseworker interface
-- Sidebar: constraint profile intake form (all 10 constraint fields)
-- Main panel: pathway comparison with income trajectory charts
-- Constraint audit alert banner when triggered
-- Exclusion transparency log (every excluded node + reason)
-- Caseworker decision section with supervisor escalation flag
-
----
-
-## How the Constraint Engine Works
-
-```
-Input: ConstraintProfile
-    ↓
-Build viable subgraph (remove excluded nodes)
-    ↓
-Traverse graph: START → [optional training] → occupation
-    ↓
-Score each path:
-  - Does it meet income deadline?
-  - Does it meet income threshold?
-  - Weeks to first income
-  - Monthly income at start and 12 months
-  - Safety fit notes
-    ↓
-Rank and deduplicate (one path per final occupation)
-    ↓
-Return top 3 PathwayResults + ConstraintAuditResult
-```
-
----
-
-## Constraint Fields
-
-| Field | Type | What It Filters |
-|-------|------|-----------------|
-| excluded_industries | List[str] | Removes all occupations in excluded industries |
-| excluded_shift_types | List[str] | Removes occupations where ALL shifts are excluded |
-| exclude_isolated_workplaces | bool | Removes isolated workplace occupations |
-| exclude_high_surveillance | bool | Removes high-surveillance occupations |
-| has_government_id | bool | Required by most occupations |
-| has_ssn | bool | Required for some occupations and training |
-| has_work_authorization | bool | Required for specific occupations |
-| has_background_check_clearance | bool | Required for childcare |
-| existing_skills | List[str] | (Not yet filtering — future: boost scoring) |
-| income_deadline_weeks | int | Removes paths that exceed the time horizon |
-| minimum_monthly_income | float | Removes occupations below income threshold |
-
----
-
-## Responsible AI Design
-
-### Risk: Constraint Encoding Bias
-Caseworkers may apply constraints over-broadly (excluding entire industries rather
-than specific employers), systematically narrowing pathways for certain survivors.
-
-### Mitigation: Constraint Audit Layer
-- Triggers when fewer than 3 viable paths are found
-- Flags which constraint types are responsible for most exclusions
-- Prompts caseworker to review specificity before proceeding
-
-### Human-in-the-Loop
-- System surfaces 2-3 options — caseworker selects
-- No pathway is ever presented to the survivor directly by the system
-- Supervisor co-review flag for legal/immigration/safety cases
-- All decisions documented in caseworker notes
-
----
-
-## Next Steps for Day 3-4
-
-- [ ] Connect to real O*NET Web Services API
-- [ ] Add skill-based scoring (boost pathways matching existing skills)
-- [ ] Add local training program catalog for your city/region
-- [ ] Add demographic audit logging for quarterly review
-- [ ] Write model card (see proposal document)
-
----
-
-## Submission Checklist
-
-- [ ] Qualifier Approval Code confirmed (check email from June 11-13)
-- [ ] Working Streamlit demo recorded as video
-- [ ] Devpost fields completed
-- [ ] Responsible AI statement written
-- [ ] Tools disclosure complete (NetworkX, Streamlit, Plotly, Python)
-- [ ] Data disclosure complete (synthetic O*NET-style data)
-- [ ] Submit before June 21 at 11:59 PM ET
+Hackathon-stage prototype.
