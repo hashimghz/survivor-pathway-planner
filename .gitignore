@@ -7,3 +7,6 @@ __pycache__/
 dist/
 build/
 .streamlit/secrets.toml
+project_handoff.md
+CHAT_SUMMARY.md
+next_phase_plan.md
