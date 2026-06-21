@@ -132,6 +132,35 @@ def _check_wage_floor(ticket: Ticket, occupation: Occupation) -> ExclusionRule |
     return None
 
 
+def _check_data_completeness(ticket: Ticket, occupation: Occupation) -> ExclusionRule | None:
+    """Veto occupations the reference data doesn't actually describe.
+
+    ~10% of data/raw/occupations.csv rows (concentrated in the highest-wage
+    management/specialist titles — surgeons, physicians, "Managers, All
+    Other," etc.) have no skills list and no work-context ratings at all.
+    Every L3 per-criterion function treats that absence as neutral-to-
+    favorable rather than as a penalty (_skill_match defaults to 0.5,
+    _isolation_fit's missing-data branch reads as "not isolated," and
+    _normalize_rating defaults missing public_facing/schedule_irregularity
+    to a neutral 0.5) — combined with these titles' very high real wages
+    maxing out wage_fit, an occupation the data says *nothing* about can
+    out-rank occupations with real, honestly-scored data. Vetoing here
+    means the engine never has to pretend it knows something about an
+    occupation it has no data for.
+
+    Deliberately last in `checks`: an occupation that's already excluded
+    for a safety/legal/documentation reason should keep that more
+    specific, more important reason rather than have it masked by a
+    data-quality veto.
+    """
+    del ticket
+    if not occupation.skills:
+        return ExclusionRule.INSUFFICIENT_DATA
+    if occupation.public_facing is None or occupation.schedule_irregularity is None:
+        return ExclusionRule.INSUFFICIENT_DATA
+    return None
+
+
 def _exclusion_detail(
     rule: ExclusionRule,
     ticket: Ticket,
@@ -152,6 +181,13 @@ def _exclusion_detail(
         return "no work auth"
     if rule == ExclusionRule.CRIMINAL_RECORD:
         return ticket.legal_profile.record_categories[0].value
+    if rule == ExclusionRule.INSUFFICIENT_DATA:
+        missing = []
+        if not occupation.skills:
+            missing.append("skills")
+        if occupation.public_facing is None or occupation.schedule_irregularity is None:
+            missing.append("work-context ratings")
+        return f"missing {' and '.join(missing)} in reference data"
     median = occupation.median_wage_hourly
     assert median is not None
     floor = ticket.wage_minimum_hourly
@@ -171,6 +207,7 @@ def apply_veto(
         _check_work_authorization,
         _check_criminal_record,
         _check_wage_floor,
+        _check_data_completeness,
     )
 
     for occupation in occupations:

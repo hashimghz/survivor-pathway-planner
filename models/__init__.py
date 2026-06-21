@@ -142,6 +142,7 @@ class ExclusionRule(str, Enum):
     WORK_AUTHORIZATION = "work_authorization"
     CRIMINAL_RECORD = "criminal_record"
     WAGE_FLOOR = "wage_floor"
+    INSUFFICIENT_DATA = "insufficient_data"
 
 
 # =============================================================================
